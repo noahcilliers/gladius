@@ -1,0 +1,169 @@
+{
+  "timestamp": "2026-10-02 12:31:51",
+  "size": {
+    "base_mb": 2019.377696,
+    "adapters_mb": {
+      "math": 24.340768,
+      "sql": 9.182816,
+      "techwriter": 48.654624,
+      "creative": 9.182816
+    },
+    "ours_total_mb": 2110.73872,
+    "separate_models_mb": 10096.88848
+  },
+  "routing": {
+    "held_out_acc": 0.9428571428571428,
+    "n": 35,
+    "per_route": {
+      "techwriter": 1.0,
+      "creative": 1.0,
+      "base": 0.8,
+      "math": 0.9,
+      "sql": 1.0
+    },
+    "leave_one_out_acc": 0.9423076923076923,
+    "misses": [
+      {
+        "expected": "base",
+        "got": "creative",
+        "prompt": "Summarize the plot of Romeo and Juliet in two sentences."
+      },
+      {
+        "expected": "math",
+        "got": "base",
+        "prompt": "full. A pump adds 15 liters per minute. How many minutes until the tank is full?"
+      }
+    ]
+  },
+  "router_latency": {
+    "route_ms_mean": 11.118434535871659,
+    "route_ms_p95": 13.425000011920929,
+    "cache_hit_ms_mean": 3.5399142785796096
+  },
+  "generation": {
+    "base": {
+      "ttft_ms": 666.3742910604924,
+      "tok_per_s": 10.850936465958501
+    },
+    "math": {
+      "ttft_ms": 708.7089160922915,
+      "tok_per_s": 6.224463138513594
+    },
+    "sql": {
+      "ttft_ms": 1246.5820000506938,
+      "tok_per_s": 7.987946189200496
+    },
+    "techwriter": {
+      "ttft_ms": 1431.4006250351667,
+      "tok_per_s": 7.4833058547987035
+    },
+    "creative": {
+      "ttft_ms": 1479.7237920574844,
+      "tok_per_s": 8.345855629342848
+    }
+  },
+  "swap": {
+    "ttft_same_adapter_ms": 582.8801249153912,
+    "ttft_switched_adapter_ms": 704.5903748366982,
+    "swap_overhead_ms": 121.71024992130697
+  },
+  "quality": {
+    "math": {
+      "n": 3,
+      "base_acc": 1.0,
+      "oracle_acc": 0.3333333333333333,
+      "router_acc": 0.3333333333333333,
+      "routing_acc": 1.0,
+      "items": [
+        {
+          "prompt": "Maria buys 3 notebooks at $4.50 each and a pen for $2.25. She pays with a $20 bill. How much change does she get? Give the final answer as a number on the last line.",
+          "routed": "math",
+          "base_correct": true,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "To find the total cost of the items, we need to calculate the cost of the notebooks and the pen.\n\nCost of 3 notebooks: 3 x $4.50 = $13.50\nCost of the pen: $2.25\nTotal cost: $13.50 + $2.25 = $15.75\n\nMaria pays with a $20 bill, so we need to subtract the total cost from $20 to find the change.\n\nChange: $20 - $15.75 = $4.25\n\nThe final answer is 4.25.",
+            "oracle": "The total cost of the notebooks is 3 * $4.50 = $13.50\nThe total cost of the items is $13.50 + $2.25 = $15.75\nThe change Maria gets is $20 - $15.75 = $4.25\nThe answer is 4.25",
+            "router": "The total cost of the notebooks is 3 * $4.50 = $13.50\nThe total cost of the items is $13.50 + $2.25 = $15.75\nThe change Maria gets is $20 - $15.75 = $4.25\nThe answer is 4.25"
+          }
+        },
+        {
+          "prompt": "A school has 480 students and 35% of them take the bus. How many students take the bus? Give the final answer as a number on the last line.",
+          "routed": "math",
+          "base_correct": true,
+          "oracle_correct": false,
+          "router_correct": false,
+          "answers": {
+            "base": "To find the number of students who take the bus, we need to calculate 35% of the total number of students.\n\nFirst, we need to convert the percentage to a decimal by dividing by 100:\n35% = 35 \u00f7 100 = 0.35\n\nNow, we multiply the decimal by the total number of students:\n0.35 \u00d7 480 = 168\n\nSo, 168 students take the bus.",
+            "oracle": "bus_students = 480 * 0.35\nprint(bus_students)",
+            "router": "bus_students = 480 * 0.35\nprint(bus_students)"
+          }
+        },
+        {
+          "prompt": "A baker makes 12 trays of muffins with 18 muffins on each tray. He sells 150 muffins. How many muffins are left? Give the final answer as a number on the last line.",
+          "routed": "math",
+          "base_correct": true,
+          "oracle_correct": false,
+          "router_correct": false,
+          "answers": {
+            "base": "To find the total number of muffins the baker made, we need to multiply the number of trays by the number of muffins on each tray.\n\nTotal muffins = 12 trays * 18 muffins/tray = 216 muffins\n\nSince the baker sold 150 muffins, we need to subtract this number from the total number of muffins to find the number of muffins left.\n\nMuffins left = Total muffins - Muffins sold\n= 216 - 150\n= 66\n\n66",
+            "oracle": "total_muffins = 12 * 18\nleft_muffins = total_muffins - 150\nprint(left_muffins)",
+            "router": "total_muffins = 12 * 18\nleft_muffins = total_muffins - 150\nprint(left_muffins)"
+          }
+        }
+      ]
+    },
+    "sql": {
+      "n": 3,
+      "base_acc": 1.0,
+      "oracle_acc": 0.3333333333333333,
+      "router_acc": 0.3333333333333333,
+      "routing_acc": 1.0,
+      "items": [
+        {
+          "prompt": "Given this SQLite schema:\nCREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, major TEXT, gpa REAL, year INTEGER);\nCREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT, dept TEXT, credits INTEGER);\nCREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, grade REAL);\n\nHow many students are there?\nReturn only the SQL query.",
+          "routed": "sql",
+          "base_correct": true,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "SELECT COUNT(id) FROM students;",
+            "oracle": "SELECT COUNT(*) FROM students",
+            "router": "SELECT COUNT(*) FROM students"
+          }
+        },
+        {
+          "prompt": "Given this SQLite schema:\nCREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, major TEXT, gpa REAL, year INTEGER);\nCREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT, dept TEXT, credits INTEGER);\nCREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, grade REAL);\n\nList the names of students majoring in Computer Science.\nReturn only the SQL query.",
+          "routed": "sql",
+          "base_correct": true,
+          "oracle_correct": false,
+          "router_correct": false,
+          "answers": {
+            "base": "SELECT name FROM students WHERE major = 'Computer Science';",
+            "oracle": "SELECT DISTINCT T1.name FROM students AS T1 JOIN enrollments AS T2 ON T1.id = T2.student_id JOIN courses AS T3 ON T2.course_id = T3.id WHERE T3.dept = 10 AND T1.major = \"Computer Science\"",
+            "router": "SELECT DISTINCT T1.name FROM students AS T1 JOIN enrollments AS T2 ON T1.id = T2.student_id JOIN courses AS T3 ON T2.course_id = T3.id WHERE T3.dept = 10 AND T1.major = \"Computer Science\""
+          }
+        },
+        {
+          "prompt": "Given this SQLite schema:\nCREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, major TEXT, gpa REAL, year INTEGER);\nCREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT, dept TEXT, credits INTEGER);\nCREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, grade REAL);\n\nWhat is the average GPA for each major?\nReturn only the SQL query.",
+          "routed": "sql",
+          "base_correct": true,
+          "oracle_correct": false,
+          "router_correct": false,
+          "answers": {
+            "base": "SELECT major, AVG(gpa) FROM students GROUP BY major;",
+            "oracle": "SELECT AVG(gpa) FROM students WHERE major = major OF courses INTERSECT SELECT AVG(g) FROM enrollments",
+            "router": "SELECT AVG(gpa) FROM students WHERE major = major OF courses INTERSECT SELECT AVG(g) FROM enrollments"
+          }
+        }
+      ]
+    }
+  },
+  "ram": {
+    "server_idle_mb": 2759.6464,
+    "router_process_mb": 1604.226944,
+    "peak_total_mb": 4556.106944,
+    "budget_mb": 3000,
+    "under_budget": false
+  }
+}
