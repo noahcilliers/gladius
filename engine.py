@@ -18,21 +18,46 @@ from pathlib import Path
 import psutil
 import requests
 
-SERVER_URL = "http://127.0.0.1:8080"
+SERVER_URL = os.environ.get("LLAMA_URL", "http://127.0.0.1:8080")
 
 # CREATE TABLE statements, or `table(col, ...)` signatures in backticks.
 _SCHEMA_RE = re.compile(r"CREATE TABLE\s+\w+\s*\((?:[^()]|\([^()]*\))*\)\s*;?|`(\w+\s*\([^`]*\))`", re.I)
 
 
+# Instructions around the question that the adapter never saw in training. Left in,
+# they make it invent extra WHERE filters.
+_SQL_BOILERPLATE_RE = re.compile(r"given (?:this|the following)(?: \w+)? schemas?:?|return only the sql(?: query)?\.?", re.I)
+
+
+def _varchar_ddl(ddl: str) -> str:
+    """sql-create-context schemas type every column VARCHAR with no constraints. Real
+    types (INTEGER PRIMARY KEY, REAL...) make the adapter invent WHERE filters."""
+    m = re.match(r"(?:CREATE TABLE\s+)?(\w+)\s*\((.*)\)", ddl.strip().rstrip(";"), re.S | re.I)
+    if not m:
+        return ddl
+    cols = [c.split()[0] for c in re.split(r",(?![^(]*\))", m.group(2)) if c.strip()]
+    return f"CREATE TABLE {m.group(1)} ({', '.join(c + ' VARCHAR' for c in cols)})"
+
+
 def sql_prompt(prompt: str) -> str:
     """BY-ALF/llama-3.2-3b-sql-lora was trained on b-mc2/sql-create-context in this
-    raw format, without the chat template."""
-    schema = "\n".join(m.group(1) or m.group(0) for m in _SCHEMA_RE.finditer(prompt))
-    question = _SCHEMA_RE.sub(lambda m: m.group(1) or "", prompt).strip()
+    raw format, without the chat template: VARCHAR schema, then a bare question.
+    Matching it took the adapter from 2/10 to 8/10 on data/eval_sql.json."""
+    schema = "\n".join(_varchar_ddl(m.group(1) or m.group(0)) for m in _SCHEMA_RE.finditer(prompt))
+    question = _SCHEMA_RE.sub(lambda m: m.group(1) or "", prompt)
+    question = " ".join(_SQL_BOILERPLATE_RE.sub("", question).split())
     return f"### Context:\n{schema}\n### Question:\n{question}\n### SQL:\n"
 
 
+def coding_prompt(prompt: str) -> str:
+    """yusifnuri/Llama-3.2-3B-Instruct_code_generation was trained on HumanEval with
+    this exact prefix, via the chat template."""
+    return f"Complete the following Python function: {prompt}"
+
+
 RAW_PROMPT_ROUTES = {"sql": sql_prompt}
+# Adapters trained with the chat template but a fixed instruction prefix.
+CHAT_PROMPT_ROUTES = {"coding": coding_prompt}
 
 
 @dataclass
@@ -46,12 +71,29 @@ class GenStats:
 
 
 class Engine:
+    ADAPTERS_TTL_S = 2.0
+
     def __init__(self, url: str = SERVER_URL):
         self.url = url
-        adapters = requests.get(f"{url}/lora-adapters", timeout=5).json()
-        self.adapter_ids = {Path(a["path"]).stem: a["id"] for a in adapters}
+        self._adapter_ids: dict[str, int] = {}
+        self._adapters_at = float("-inf")
+        self.adapter_ids  # fail fast if the server is down
         self.server = _find_server_process()
         self.last_stats: GenStats | None = None
+
+    @property
+    def adapter_ids(self) -> dict[str, int]:
+        """Adapter name -> id, re-read from the server every couple of seconds. A UI that
+        outlives a server restart would otherwise keep the old numbering and switch on
+        the wrong adapter (ids shift when one is added or dropped)."""
+        if time.monotonic() - self._adapters_at > self.ADAPTERS_TTL_S:
+            adapters = requests.get(f"{self.url}/lora-adapters", timeout=5).json()
+            self._adapter_ids = {Path(a["path"]).stem: a["id"] for a in adapters}
+            self._adapters_at = time.monotonic()
+        return self._adapter_ids
+
+    def has_adapter(self, route: str) -> bool:
+        return route in self.adapter_ids
 
     def lora_for(self, route: str) -> list[dict]:
         return [{"id": i, "scale": 1.0 if name == route else 0.0} for name, i in self.adapter_ids.items()]
@@ -66,13 +108,16 @@ class Engine:
             # The KV cache from a different adapter isn't valid for this one.
             "cache_prompt": False,
         }
-        if route in RAW_PROMPT_ROUTES:
+        # Adapter-specific prompt formats only apply when that adapter is loaded; a route
+        # without one (e.g. a dropped adapter) is plain base model + chat template.
+        if route in RAW_PROMPT_ROUTES and self.has_adapter(route):
             # Adapters trained without the chat template get their own raw format.
             endpoint = "/completion"
             body |= {"prompt": RAW_PROMPT_ROUTES[route](prompt), "n_predict": max_tokens, "stop": ["###", "\n\n"]}
         else:
+            fmt = CHAT_PROMPT_ROUTES.get(route) if self.has_adapter(route) else None
             endpoint = "/v1/chat/completions"
-            body |= {"messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens}
+            body |= {"messages": [{"role": "user", "content": fmt(prompt) if fmt else prompt}], "max_tokens": max_tokens}
 
         t0 = time.perf_counter()
         ttft_ms, n_chunks, timings = None, 0, None

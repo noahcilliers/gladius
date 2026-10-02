@@ -1,0 +1,17 @@
+# Model weights and vendored tools (too large for git)
+models/
+adapters/
+vendor/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+logs/
+
+# Runtime state from the UI (saved chats, per-turn logs)
+results/sessions.json
+results/turns.jsonl

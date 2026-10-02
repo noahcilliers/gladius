@@ -1,0 +1,243 @@
+{
+ "_note": "Retrieval eval for retriever.py (pipeline step 4b). `route` is the expected route; retrieval is scored as if that route was chosen. `expected` lists chunk headings where any hit counts; an empty list is a negative control (nothing should be injected). Keep these out of the router's centroid examples.",
+ "cases": [
+  {
+   "prompt": "Write an email to my databases professor asking for an extension on HW3.",
+   "route": "base",
+   "expected": [
+    "CS 301 — Late policy, late days and how to ask for an extension",
+    "CS 301 — Assignment deadlines"
+   ]
+  },
+  {
+   "prompt": "When is my linear algebra midterm and what does it cover?",
+   "route": "base",
+   "expected": [
+    "MATH 221 — Problem set and exam dates",
+    "MATH 221 notes — Midterm 1 format and tips from Prof. Okafor",
+    "MATH 221 Linear Algebra syllabus — Lecture topics by week up to Midterm 1, weeks 1–8 (Aug 25 – Oct 15)"
+   ]
+  },
+  {
+   "prompt": "Make me a study plan for next week.",
+   "route": "base",
+   "expected": [
+    "All courses — Deadlines, exams and review sessions in October 2026",
+    "MATH 221 — Problem set and exam dates",
+    "CS 301 — Assignment deadlines",
+    "PHIL 150 — Essay 1 prompt and requirements",
+    "MATH 221 notes — Midterm 1 format and tips from Prof. Okafor"
+   ]
+  },
+  {
+   "prompt": "What's due before the end of October?",
+   "route": "base",
+   "expected": [
+    "All courses — Deadlines, exams and review sessions in October 2026",
+    "CS 301 — Assignment deadlines",
+    "MATH 221 — Problem set and exam dates",
+    "PHIL 150 — Essay 1 prompt and requirements"
+   ]
+  },
+  {
+   "prompt": "When are Prof. Okafor's office hours?",
+   "route": "base",
+   "expected": [
+    "MATH 221 — Course overview and instructor"
+   ]
+  },
+  {
+   "prompt": "What did Prof. Chen say would be on the databases midterm?",
+   "route": "base",
+   "expected": [
+    "CS 301 notes — Midterm review tips from Prof. Chen",
+    "CS 301 — Exam dates"
+   ]
+  },
+  {
+   "prompt": "From my lecture notes, what's the difference between WHERE and HAVING?",
+   "route": "base",
+   "expected": [
+    "CS 301 notes — GROUP BY, HAVING vs WHERE (lectures Sep 28–30)"
+   ]
+  },
+  {
+   "prompt": "Why does my LEFT JOIN keep acting like an inner join on HW3?",
+   "route": "base",
+   "expected": [
+    "CS 301 notes — Joins: inner, left, outer, self (lectures Sep 16–18)"
+   ]
+  },
+  {
+   "prompt": "What hints did the professor give for HW3 question 4?",
+   "route": "base",
+   "expected": [
+    "CS 301 notes — Subqueries, IN vs EXISTS, and HW3 hints (lectures Sep 21–25)"
+   ]
+  },
+  {
+   "prompt": "Explain 3NF the way we covered it in class, I need it for project milestone 1.",
+   "route": "base",
+   "expected": [
+    "CS 301 notes — Functional dependencies and normalization to 3NF (lectures Sep 9–11)"
+   ]
+  },
+  {
+   "prompt": "Using my notes, how do I find a basis for the null space of a matrix?",
+   "route": "base",
+   "expected": [
+    "MATH 221 notes — Column space and null space (lectures Sep 22–24)"
+   ]
+  },
+  {
+   "prompt": "Quiz me on the subspace test from linear algebra.",
+   "route": "base",
+   "expected": [
+    "MATH 221 notes — Vector spaces and the subspace test (lectures Sep 15–17)"
+   ]
+  },
+  {
+   "prompt": "What does Heidegger mean by standing-reserve?",
+   "route": "base",
+   "expected": [
+    "PHIL 150 notes — Heidegger part 2: Gestell (enframing) and standing-reserve (seminar Oct 1)"
+   ]
+  },
+  {
+   "prompt": "What did Dr. Lindqvist say makes a good thesis for the Heidegger essay?",
+   "route": "base",
+   "expected": [
+    "PHIL 150 notes — Essay 1 tips from Dr. Lindqvist",
+    "PHIL 150 — Essay 1 prompt and requirements"
+   ]
+  },
+  {
+   "prompt": "Help me outline my Heidegger essay.",
+   "route": "creative",
+   "expected": [
+    "PHIL 150 — Essay 1 prompt and requirements",
+    "PHIL 150 notes — Essay 1 tips from Dr. Lindqvist"
+   ]
+  },
+  {
+   "prompt": "Count how many students are enrolled in each course this semester.",
+   "route": "sql",
+   "expected": [
+    "CS 301 — University class database schema (used in homework and labs)"
+   ]
+  },
+  {
+   "prompt": "Which bike stations have the most rides starting from them?",
+   "route": "sql",
+   "expected": [
+    "CS 301 — Bike-share project database schema (Jordan's team project)"
+   ]
+  },
+  {
+   "prompt": "Am I allowed to use ChatGPT on my databases homework?",
+   "route": "base",
+   "expected": [
+    "CS 301 Database Systems syllabus — Collaboration and AI tool policy"
+   ]
+  },
+  {
+   "prompt": "Can I use AI to help with my philosophy essay?",
+   "route": "base",
+   "expected": [
+    "PHIL 150 Philosophy of Technology syllabus — AI tool policy and academic integrity"
+   ]
+  },
+  {
+   "prompt": "If I bomb a linear algebra midterm, can the final replace it?",
+   "route": "base",
+   "expected": [
+    "MATH 221 Linear Algebra syllabus — Letter grade cutoffs and the final-exam replacement rule"
+   ]
+  },
+  {
+   "prompt": "What percentage do I need for an A- in Database Systems?",
+   "route": "base",
+   "expected": [
+    "CS 301 Database Systems syllabus — Letter grade cutoffs (percent needed for an A, B, C) and regrade requests"
+   ]
+  },
+  {
+   "prompt": "What are we reading in philosophy after Winner?",
+   "route": "base",
+   "expected": [
+    "PHIL 150 Philosophy of Technology syllabus — Reading schedule, weeks 9–15 (Oct 19 – Dec 9)"
+   ]
+  },
+  {
+   "prompt": "What topics come after the midterm in CS 301?",
+   "route": "base",
+   "expected": [
+    "CS 301 Database Systems syllabus — Lecture topics by week after the midterm, weeks 9–16 (Oct 19 – Dec 10)"
+   ]
+  },
+  {
+   "prompt": "How many classes can I skip in my philosophy seminar?",
+   "route": "base",
+   "expected": [
+    "PHIL 150 Philosophy of Technology syllabus — Attendance policy (how many absences are allowed), participation and late essays"
+   ]
+  },
+  {
+   "prompt": "I missed a lab this week, can I make it up?",
+   "route": "base",
+   "expected": [
+    "CS 301 Database Systems syllabus — Attendance and labs"
+   ]
+  },
+  {
+   "prompt": "What textbook do we use for linear algebra?",
+   "route": "base",
+   "expected": [
+    "MATH 221 Linear Algebra syllabus — Textbook and materials",
+    "MATH 221 — Course overview and instructor"
+   ]
+  },
+  {
+   "prompt": "How do I request a regrade on my linear algebra exam?",
+   "route": "base",
+   "expected": [
+    "MATH 221 Linear Algebra syllabus — Missed exams, regrades and accommodations"
+   ]
+  },
+  {
+   "prompt": "hey whats up",
+   "route": "base",
+   "expected": []
+  },
+  {
+   "prompt": "What's the capital of Australia?",
+   "route": "base",
+   "expected": []
+  },
+  {
+   "prompt": "Write a short story about a dragon who loves baking.",
+   "route": "creative",
+   "expected": []
+  },
+  {
+   "prompt": "Write a haiku about autumn leaves.",
+   "route": "creative",
+   "expected": []
+  },
+  {
+   "prompt": "What's the derivative of x³·sin(x)?",
+   "route": "math",
+   "expected": []
+  },
+  {
+   "prompt": "Tom reads 25 pages a day. His book has 410 pages and he has already read 160. How many more days does he need?",
+   "route": "math",
+   "expected": []
+  },
+  {
+   "prompt": "A school has 480 students and 35% of them take the bus. How many students take the bus?",
+   "route": "math",
+   "expected": []
+  }
+ ]
+}

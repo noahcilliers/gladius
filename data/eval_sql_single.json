@@ -1,0 +1,20 @@
+{
+  "_note": "Single-table questions (the SQL adapter's training distribution), written before any adapter results were seen. Same schema and seed data as eval_sql.json.",
+  "questions": [
+    {"question": "How many students are in year 1?", "sql": "SELECT COUNT(*) FROM students WHERE year = 1"},
+    {"question": "What is the lowest GPA among Biology majors?", "sql": "SELECT MIN(gpa) FROM students WHERE major = 'Biology'"},
+    {"question": "List the names of students with a GPA between 3.0 and 3.6.", "sql": "SELECT name FROM students WHERE gpa BETWEEN 3.0 AND 3.6"},
+    {"question": "Which majors have more than one student?", "sql": "SELECT major FROM students GROUP BY major HAVING COUNT(*) > 1"},
+    {"question": "What is the average GPA of students in year 3 or higher?", "sql": "SELECT AVG(gpa) FROM students WHERE year >= 3"},
+    {"question": "List the names of the three students with the lowest GPA.", "sql": "SELECT name FROM students ORDER BY gpa ASC LIMIT 3"},
+    {"question": "How many students are there in each year?", "sql": "SELECT year, COUNT(*) FROM students GROUP BY year"},
+    {"question": "What is the name of the Economics major with the highest GPA?", "sql": "SELECT name FROM students WHERE major = 'Economics' ORDER BY gpa DESC LIMIT 1"},
+    {"question": "What is the total number of credits offered by the Mathematics department?", "sql": "SELECT SUM(credits) FROM courses WHERE dept = 'Mathematics'"},
+    {"question": "List the course titles that have exactly 4 credits.", "sql": "SELECT title FROM courses WHERE credits = 4"},
+    {"question": "Which department offers the most courses?", "sql": "SELECT dept FROM courses GROUP BY dept ORDER BY COUNT(*) DESC LIMIT 1"},
+    {"question": "What is the average number of credits per course in each department?", "sql": "SELECT dept, AVG(credits) FROM courses GROUP BY dept"},
+    {"question": "What is the highest grade recorded in course 3?", "sql": "SELECT MAX(grade) FROM enrollments WHERE course_id = 3"},
+    {"question": "How many enrollments have a grade below 3.2?", "sql": "SELECT COUNT(*) FROM enrollments WHERE grade < 3.2"},
+    {"question": "Which student IDs are enrolled in more than one course?", "sql": "SELECT student_id FROM enrollments GROUP BY student_id HAVING COUNT(*) > 1"}
+  ]
+}

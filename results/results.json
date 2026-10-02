@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-10-02 12:31:51",
+  "timestamp": "2026-10-02 13:17:22",
   "size": {
     "base_mb": 2019.377696,
     "adapters_mb": {
       "math": 24.340768,
-      "sql": 9.182816,
       "techwriter": 48.654624,
-      "creative": 9.182816
+      "creative": 9.182816,
+      "coding": 36.716192
     },
-    "ours_total_mb": 2110.73872,
+    "ours_total_mb": 2138.272096,
     "separate_models_mb": 10096.88848
   },
   "routing": {
@@ -21,7 +21,7 @@
       "math": 0.9,
       "sql": 1.0
     },
-    "leave_one_out_acc": 0.9423076923076923,
+    "leave_one_out_acc": 0.9516129032258065,
     "misses": [
       {
         "expected": "base",
@@ -36,134 +36,173 @@
     ]
   },
   "router_latency": {
-    "route_ms_mean": 11.118434535871659,
-    "route_ms_p95": 13.425000011920929,
-    "cache_hit_ms_mean": 3.5399142785796096
+    "route_ms_mean": 16.244428445185935,
+    "route_ms_p95": 26.486708084121346,
+    "cache_hit_ms_mean": 2.5532927696726153
   },
   "generation": {
     "base": {
-      "ttft_ms": 666.3742910604924,
-      "tok_per_s": 10.850936465958501
+      "ttft_ms": 1137.3500695917755,
+      "tok_per_s": 6.345744468384129
     },
     "math": {
-      "ttft_ms": 708.7089160922915,
-      "tok_per_s": 6.224463138513594
-    },
-    "sql": {
-      "ttft_ms": 1246.5820000506938,
-      "tok_per_s": 7.987946189200496
+      "ttft_ms": 945.4019999442002,
+      "tok_per_s": 7.561204763848492
     },
     "techwriter": {
-      "ttft_ms": 1431.4006250351667,
-      "tok_per_s": 7.4833058547987035
+      "ttft_ms": 1038.9957080284755,
+      "tok_per_s": 7.005597120959347
     },
     "creative": {
-      "ttft_ms": 1479.7237920574844,
-      "tok_per_s": 8.345855629342848
+      "ttft_ms": 886.2034723473092,
+      "tok_per_s": 7.595466737527329
+    },
+    "coding": {
+      "ttft_ms": 749.5485278777778,
+      "tok_per_s": 7.799090473053534
     }
   },
   "swap": {
-    "ttft_same_adapter_ms": 582.8801249153912,
-    "ttft_switched_adapter_ms": 704.5903748366982,
-    "swap_overhead_ms": 121.71024992130697
+    "ttft_same_adapter_ms": 947.8823192572842,
+    "ttft_switched_adapter_ms": 922.1819026085237,
+    "swap_overhead_ms": -25.700416648760438
   },
   "quality": {
     "math": {
-      "n": 3,
-      "base_acc": 1.0,
-      "oracle_acc": 0.3333333333333333,
-      "router_acc": 0.3333333333333333,
-      "routing_acc": 1.0,
+      "n": 10,
+      "base_acc": 0.8,
+      "oracle_acc": 1.0,
+      "router_acc": 0.9,
+      "routing_acc": 0.9,
       "items": [
         {
-          "prompt": "Maria buys 3 notebooks at $4.50 each and a pen for $2.25. She pays with a $20 bill. How much change does she get? Give the final answer as a number on the last line.",
+          "prompt": "Maria buys 3 notebooks at $4.50 each and a pen for $2.25. She pays with a $20 bill. How much change does she get?",
           "routed": "math",
           "base_correct": true,
           "oracle_correct": true,
           "router_correct": true,
           "answers": {
-            "base": "To find the total cost of the items, we need to calculate the cost of the notebooks and the pen.\n\nCost of 3 notebooks: 3 x $4.50 = $13.50\nCost of the pen: $2.25\nTotal cost: $13.50 + $2.25 = $15.75\n\nMaria pays with a $20 bill, so we need to subtract the total cost from $20 to find the change.\n\nChange: $20 - $15.75 = $4.25\n\nThe final answer is 4.25.",
-            "oracle": "The total cost of the notebooks is 3 * $4.50 = $13.50\nThe total cost of the items is $13.50 + $2.25 = $15.75\nThe change Maria gets is $20 - $15.75 = $4.25\nThe answer is 4.25",
-            "router": "The total cost of the notebooks is 3 * $4.50 = $13.50\nThe total cost of the items is $13.50 + $2.25 = $15.75\nThe change Maria gets is $20 - $15.75 = $4.25\nThe answer is 4.25"
+            "base": "To find the total cost, we need to calculate the cost of the notebooks and the pen.\n\nCost of 3 notebooks: 3 x $4.50 = $13.50\nCost of the pen: $2.25\nTotal cost: $13.50 + $2.25 = $15.75\n\nMaria pays with a $20 bill. To find the change, we subtract the total cost from the $20 bill:\n\nChange = $20 - $15.75\nChange = $4.25\n\nMaria gets $4.25 in change.",
+            "oracle": "The cost of the notebooks is 3 x $4.50 = $13.50.\nThe total cost is $13.50 + $2.25 = $15.75.\nMaria gets $20 - $15.75 = $4.25 in change.\nThe answer is 4.25",
+            "router": "The cost of the notebooks is 3 x $4.50 = $13.50.\nThe total cost is $13.50 + $2.25 = $15.75.\nMaria gets $20 - $15.75 = $4.25 in change.\nThe answer is 4.25"
           }
         },
         {
-          "prompt": "A school has 480 students and 35% of them take the bus. How many students take the bus? Give the final answer as a number on the last line.",
+          "prompt": "A school has 480 students and 35% of them take the bus. How many students take the bus?",
           "routed": "math",
-          "base_correct": true,
-          "oracle_correct": false,
-          "router_correct": false,
-          "answers": {
-            "base": "To find the number of students who take the bus, we need to calculate 35% of the total number of students.\n\nFirst, we need to convert the percentage to a decimal by dividing by 100:\n35% = 35 \u00f7 100 = 0.35\n\nNow, we multiply the decimal by the total number of students:\n0.35 \u00d7 480 = 168\n\nSo, 168 students take the bus.",
-            "oracle": "bus_students = 480 * 0.35\nprint(bus_students)",
-            "router": "bus_students = 480 * 0.35\nprint(bus_students)"
-          }
-        },
-        {
-          "prompt": "A baker makes 12 trays of muffins with 18 muffins on each tray. He sells 150 muffins. How many muffins are left? Give the final answer as a number on the last line.",
-          "routed": "math",
-          "base_correct": true,
-          "oracle_correct": false,
-          "router_correct": false,
-          "answers": {
-            "base": "To find the total number of muffins the baker made, we need to multiply the number of trays by the number of muffins on each tray.\n\nTotal muffins = 12 trays * 18 muffins/tray = 216 muffins\n\nSince the baker sold 150 muffins, we need to subtract this number from the total number of muffins to find the number of muffins left.\n\nMuffins left = Total muffins - Muffins sold\n= 216 - 150\n= 66\n\n66",
-            "oracle": "total_muffins = 12 * 18\nleft_muffins = total_muffins - 150\nprint(left_muffins)",
-            "router": "total_muffins = 12 * 18\nleft_muffins = total_muffins - 150\nprint(left_muffins)"
-          }
-        }
-      ]
-    },
-    "sql": {
-      "n": 3,
-      "base_acc": 1.0,
-      "oracle_acc": 0.3333333333333333,
-      "router_acc": 0.3333333333333333,
-      "routing_acc": 1.0,
-      "items": [
-        {
-          "prompt": "Given this SQLite schema:\nCREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, major TEXT, gpa REAL, year INTEGER);\nCREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT, dept TEXT, credits INTEGER);\nCREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, grade REAL);\n\nHow many students are there?\nReturn only the SQL query.",
-          "routed": "sql",
           "base_correct": true,
           "oracle_correct": true,
           "router_correct": true,
           "answers": {
-            "base": "SELECT COUNT(id) FROM students;",
-            "oracle": "SELECT COUNT(*) FROM students",
-            "router": "SELECT COUNT(*) FROM students"
+            "base": "To find the number of students who take the bus, you need to calculate 35% of the total number of students.\n\n35% of 480 = 0.35 x 480\n= 168\n\nSo, 168 students take the bus.",
+            "oracle": "To find the number of students who take the bus, we need to calculate 35% of 480.\n\n35% = 35/100 = 0.35\n\nNumber of students who take the bus = 0.35 * 480\n= 168\n\nSo, 168 students take the bus.",
+            "router": "To find the number of students who take the bus, we need to calculate 35% of 480.\n\n35% = 35/100 = 0.35\n\nNumber of students who take the bus = 0.35 * 480\n= 168\n\nSo, 168 students take the bus."
           }
         },
         {
-          "prompt": "Given this SQLite schema:\nCREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, major TEXT, gpa REAL, year INTEGER);\nCREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT, dept TEXT, credits INTEGER);\nCREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, grade REAL);\n\nList the names of students majoring in Computer Science.\nReturn only the SQL query.",
-          "routed": "sql",
+          "prompt": "A baker makes 12 trays of muffins with 18 muffins on each tray. He sells 150 muffins. How many muffins are left?",
+          "routed": "math",
           "base_correct": true,
-          "oracle_correct": false,
-          "router_correct": false,
+          "oracle_correct": true,
+          "router_correct": true,
           "answers": {
-            "base": "SELECT name FROM students WHERE major = 'Computer Science';",
-            "oracle": "SELECT DISTINCT T1.name FROM students AS T1 JOIN enrollments AS T2 ON T1.id = T2.student_id JOIN courses AS T3 ON T2.course_id = T3.id WHERE T3.dept = 10 AND T1.major = \"Computer Science\"",
-            "router": "SELECT DISTINCT T1.name FROM students AS T1 JOIN enrollments AS T2 ON T1.id = T2.student_id JOIN courses AS T3 ON T2.course_id = T3.id WHERE T3.dept = 10 AND T1.major = \"Computer Science\""
+            "base": "To find out how many muffins are left, we need to calculate the total number of muffins the baker made and then subtract the number of muffins he sold.\n\nThe baker made 12 trays of muffins with 18 muffins on each tray. \n\nTotal number of muffins = 12 trays * 18 muffins/tray\nTotal number of muffins = 216 muffins\n\nHe sold 150 muffins. \n\nNumber of muffins left = Total number of muffins - Number of muffins sold\nNumber of muffins left = 216 - 150\nNumber of muffins left = 66\n\nSo, there are 66 muffins left.",
+            "oracle": "The baker made 12 x 18 = 216 muffins.\nHe has 216 - 150 = 66 muffins left.\nThe answer is 66",
+            "router": "The baker made 12 x 18 = 216 muffins.\nHe has 216 - 150 = 66 muffins left.\nThe answer is 66"
           }
         },
         {
-          "prompt": "Given this SQLite schema:\nCREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, major TEXT, gpa REAL, year INTEGER);\nCREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT, dept TEXT, credits INTEGER);\nCREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, grade REAL);\n\nWhat is the average GPA for each major?\nReturn only the SQL query.",
-          "routed": "sql",
+          "prompt": "Tom reads 25 pages a day. His book has 410 pages and he has already read 110. How many more days does he need to finish it?",
+          "routed": "math",
           "base_correct": true,
-          "oracle_correct": false,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "To find out how many more days Tom needs to finish the book, we need to first find out how many pages are left to read.\n\nTotal pages in the book: 410\nPages already read: 110\nPages left to read: 410 - 110 = 300\n\nSince Tom reads 25 pages a day, we can divide the number of pages left by his daily reading rate to find out how many days it will take him to finish the book.\n\n300 pages / 25 pages per day = 12 days\n\nSo, Tom needs 12 more days to finish the book.",
+            "oracle": "Tom has already read 110 pages of the book, so he has 410 - 110 = 300 pages left to read.\n\nSince he reads 25 pages a day, he will need 300 / 25 = 12 days to finish the book.\n\nThe answer is 12",
+            "router": "Tom has already read 110 pages of the book, so he has 410 - 110 = 300 pages left to read.\n\nSince he reads 25 pages a day, he will need 300 / 25 = 12 days to finish the book.\n\nThe answer is 12"
+          }
+        },
+        {
+          "prompt": "A phone costs $640. It is on sale for 15% off, and then 8% sales tax is added to the sale price. What is the final price?",
+          "routed": "math",
+          "base_correct": true,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "To find the final price, we need to calculate the sale price first and then add the sales tax.\n\n1. Calculate the sale price:\nOriginal price: $640\nDiscount: 15%\nSale price = Original price - (Original price * Discount)\n= $640 - ($640 * 0.15)\n= $640 - $96\n= $544\n\n2. Calculate the sales tax:\nSale price: $544\nSales tax rate: 8%\nSales tax = Sale price * Sales tax rate\n= $544 * 0.08\n= $43.52\n\n3. Calculate the final price:\nSale price + Sales tax = Final price\n= $544 + $43.52\n= $587.52\n\nThe final price is $587.52.",
+            "oracle": "To find the sale price, first find 15% of the original price: 15% * $640 = 0.15 * $640 = $96\nThen subtract the discount from the original price: $640 - $96 = $544\nNow, find 8% of the sale price: 8% * $544 = 0.08 * $544 = $43.52\nFinally, add the sales tax to the sale price: $544 + $43.52 = $587.52\nThe final price is $587.52.",
+            "router": "To find the sale price, first find 15% of the original price: 15% * $640 = 0.15 * $640 = $96\nThen subtract the discount from the original price: $640 - $96 = $544\nNow, find 8% of the sale price: 8% * $544 = 0.08 * $544 = $43.52\nFinally, add the sales tax to the sale price: $544 + $43.52 = $587.52\nThe final price is $587.52."
+          }
+        },
+        {
+          "prompt": "Two numbers add up to 56, and one is 3 times the other. What is the larger number?",
+          "routed": "math",
+          "base_correct": true,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "Let's call the smaller number 'x'. Since one number is 3 times the other, the larger number is 3x.\n\nWe know that the sum of the two numbers is 56, so we can write the equation:\n\nx + 3x = 56\n\nCombine like terms:\n\n4x = 56\n\nDivide both sides by 4:\n\nx = 14\n\nNow that we know the smaller number is 14, we can find the larger number by multiplying it by 3:\n\n3x = 3(14) = 42\n\nSo, the larger number is 42.",
+            "oracle": "Let's denote the smaller number as x. Then, the larger number is 3x. We know that their sum is 56, so we can write the equation:\n\nx + 3x = 56\n\nCombine like terms:\n\n4x = 56\n\nDivide both sides by 4:\n\nx = 14\n\nNow that we know the smaller number is 14, the larger number is 3x = 3(14) = 42. So, the larger number is 42.",
+            "router": "Let's denote the smaller number as x. Then, the larger number is 3x. We know that their sum is 56, so we can write the equation:\n\nx + 3x = 56\n\nCombine like terms:\n\n4x = 56\n\nDivide both sides by 4:\n\nx = 14\n\nNow that we know the smaller number is 14, the larger number is 3x = 3(14) = 42. So, the larger number is 42."
+          }
+        },
+        {
+          "prompt": "A cyclist rides at 18 km/h for 2.5 hours, then at 12 km/h for 1.5 hours. How many kilometers does she ride in total?",
+          "routed": "math",
+          "base_correct": true,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "To find the total distance, we need to calculate the distance covered at each speed and then add them together.\n\nDistance = Speed * Time\n\nFor the first part of the ride:\nDistance = 18 km/h * 2.5 hours\nDistance = 45 km\n\nFor the second part of the ride:\nDistance = 12 km/h * 1.5 hours\nDistance = 18 km\n\nNow, let's add the distances together:\nTotal Distance = 45 km + 18 km\nTotal Distance = 63 km\n\nThe cyclist rides a total of 63 kilometers.",
+            "oracle": "To find the total distance, we need to find the distance covered in each segment and then add them together.\n\nDistance = Speed * Time\nDistance covered at 18 km/h = 18 * 2.5 = 45 km\nDistance covered at 12 km/h = 12 * 1.5 = 18 km\n\nTotal distance = 45 + 18 = 63 km\n\nSo, the cyclist rides a total of 63 kilometers.",
+            "router": "To find the total distance, we need to find the distance covered in each segment and then add them together.\n\nDistance = Speed * Time\nDistance covered at 18 km/h = 18 * 2.5 = 45 km\nDistance covered at 12 km/h = 12 * 1.5 = 18 km\n\nTotal distance = 45 + 18 = 63 km\n\nSo, the cyclist rides a total of 63 kilometers."
+          }
+        },
+        {
+          "prompt": "A rectangular garden is 14 m long and 9 m wide. Fencing costs $6 per meter. How much does it cost to fence the whole garden?",
+          "routed": "math",
+          "base_correct": true,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "To find the cost of fencing the garden, we need to calculate the perimeter of the garden. The perimeter is the distance around the garden.\n\nThe formula for the perimeter of a rectangle is: Perimeter = 2(length + width)\n\nGiven length = 14 m and width = 9 m, we can plug these values into the formula:\n\nPerimeter = 2(14 + 9)\nPerimeter = 2(23)\nPerimeter = 46 m\n\nNow, we need to multiply the perimeter by the cost per meter to find the total cost:\n\nTotal cost = Perimeter * Cost per meter\nTotal cost = 46 m * $6/m\nTotal cost = $276\n\nSo, it costs $276 to fence the whole garden.",
+            "oracle": "To find the cost of fencing the garden, we first need to find the perimeter of the garden. The perimeter of a rectangle is given by the formula: perimeter = 2(length + width). In this case, the length is 14m and the width is 9m. So, perimeter = 2(14 + 9) = 2(23) = 46m. Now, we can find the cost of fencing: cost = perimeter * cost per meter = 46 * $6 = $276. The answer is 276",
+            "router": "To find the cost of fencing the garden, we first need to find the perimeter of the garden. The perimeter of a rectangle is given by the formula: perimeter = 2(length + width). In this case, the length is 14m and the width is 9m. So, perimeter = 2(14 + 9) = 2(23) = 46m. Now, we can find the cost of fencing: cost = perimeter * cost per meter = 46 * $6 = $276. The answer is 276"
+          }
+        },
+        {
+          "prompt": "Jake earns $15 per hour and works 6 hours a day, 5 days a week. How much does he earn in 4 weeks?",
+          "routed": "math",
+          "base_correct": false,
+          "oracle_correct": true,
+          "router_correct": true,
+          "answers": {
+            "base": "To find out how much Jake earns in 4 weeks, we need to calculate his daily earnings and then multiply it by the number of weeks.\n\nDaily earnings: $15/hour * 6 hours = $90/day\n\nWeekly earnings: $90/day * 5 days = $450/week\n\nNow, let's calculate his earnings for 4 weeks:\n$450/week * 4 weeks = $1800\n\nSo, Jake earns $1800 in 4 weeks.",
+            "oracle": "Jake earns $15 per hour and works 6 hours a day, so he earns $15 * 6 = $90 per day.\nHe works 5 days a week, so he earns $90 * 5 = $450 per week.\nIn 4 weeks, Jake earns $450 * 4 = $1800.\nThe answer is 1800",
+            "router": "Jake earns $15 per hour and works 6 hours a day, so he earns $15 * 6 = $90 per day.\nHe works 5 days a week, so he earns $90 * 5 = $450 per week.\nIn 4 weeks, Jake earns $450 * 4 = $1800.\nThe answer is 1800"
+          }
+        },
+        {
+          "prompt": "A 200-liter tank is 40% full. A pump adds 15 liters per minute. How many minutes until the tank is full?",
+          "routed": "base",
+          "base_correct": false,
+          "oracle_correct": true,
           "router_correct": false,
           "answers": {
-            "base": "SELECT major, AVG(gpa) FROM students GROUP BY major;",
-            "oracle": "SELECT AVG(gpa) FROM students WHERE major = major OF courses INTERSECT SELECT AVG(g) FROM enrollments",
-            "router": "SELECT AVG(gpa) FROM students WHERE major = major OF courses INTERSECT SELECT AVG(g) FROM enrollments"
+            "base": "To find out how many minutes until the tank is full, we need to calculate the total amount of water in the tank and then divide it by the rate at which the pump adds water.\n\nThe tank is 40% full, which means it contains 40% of 200 liters.\n\n40% of 200 liters = 0.4 * 200 = 80 liters\n\nSince the pump adds 15 liters per minute, we can divide the total amount of water in the tank (80 liters) by the rate at which the pump adds water (15 liters per minute) to find out how many minutes it will take to fill the tank.\n\n80 liters / 15 liters per minute = 5.33 minutes\n\nSo, it will take approximately 5.33 minutes for the tank to be full.",
+            "oracle": "The tank is 40% full, so it has 0.4 * 200 = 80 liters of water in it.\n\nTo find out how many minutes it takes to fill the tank, we need to divide the remaining amount of water (200 - 80 = 120 liters) by the rate at which the pump adds water (15 liters per minute).\n\n120 liters / 15 liters per minute = 8 minutes\n\nSo, it will take 8 minutes to fill the tank.",
+            "router": "To find out how many minutes until the tank is full, we need to calculate the total amount of water in the tank and then divide it by the rate at which the pump adds water.\n\nThe tank is 40% full, which means it contains 40% of 200 liters.\n\n40% of 200 liters = 0.4 * 200 = 80 liters\n\nSince the pump adds 15 liters per minute, we can divide the total amount of water in the tank (80 liters) by the rate at which the pump adds water (15 liters per minute) to find out how many minutes it will take to fill the tank.\n\n80 liters / 15 liters per minute = 5.33 minutes\n\nSo, it will take approximately 5.33 minutes for the tank to be full."
           }
         }
       ]
     }
   },
   "ram": {
-    "server_idle_mb": 2759.6464,
-    "router_process_mb": 1604.226944,
-    "peak_total_mb": 4556.106944,
-    "budget_mb": 3000,
-    "under_budget": false
+    "server_idle_mb": 2672.532608,
+    "router_process_mb": 409.980672,
+    "peak_total_mb": 3309.7268480000002,
+    "laptop_mb": 8000,
+    "share_of_laptop": 0.41371585600000005
   }
 }

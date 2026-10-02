@@ -7,9 +7,10 @@ Base: `meta-llama/Llama-3.2-3B-Instruct` (served as `bartowski/Llama-3.2-3B-Inst
 | Route | Adapter | Size | LoRA |
 |---|---|---|---|
 | `math` | SriSanthM/LLAMA-3.2-3B-MathInstruct_LORA_SFT | 49 MB | r=8, all linear |
-| `sql` | BY-ALF/llama-3.2-3b-sql-lora | 18 MB | r=16, q/v |
+| `sql` | ~~BY-ALF/llama-3.2-3b-sql-lora~~ dropped: lost to base (73% vs 93%). SQL prompts are answered by the base model | 18 MB | r=16, q/v |
 | `techwriter` | Shankarblr/Llama-3.2-3B-TechWriter-LoRA | 97 MB | r=16, all linear |
 | `creative` | closestfriend/brie-llama-3b | 18 MB | r=16, q/v |
+| `coding` | yusifnuri/Llama-3.2-3B-Instruct_code_generation | 37 MB | r=16, q/k/v/o |
 | `base` | No adapter (fallback) | | |
 
 Don't use jeeejeee/llama32-3b-text2sql-spider: it's 1.6 GB because it also trains `embed_tokens` and `lm_head`.
@@ -112,6 +113,29 @@ Don't use jeeejeee/llama32-3b-text2sql-spider: it's 1.6 GB because it also train
 - Imagine a dialogue between Socrates and a smartphone.
 - Write a contemplative piece about strangers sharing a night train.
 
+## coding
+
+- Write a Python function that checks whether a string is a palindrome.
+- Complete this function: def fibonacci(n): """Return the nth Fibonacci number."""
+- Write a Python function to merge two sorted lists into one sorted list.
+- def is_prime(n): # return True if n is prime
+- Write a Python function that removes duplicates from a list while keeping the order.
+- Implement a Python function that counts the vowels in a string.
+- Write a function in Python that flattens a nested list.
+- Complete the function: def two_sum(nums, target): """Return indices of the two numbers that add up to target."""
+- Write a Python function to reverse the words in a sentence.
+- Write a Python function that returns the largest element in a list without using max().
+- Implement binary search in Python.
+- Write a Python function that converts a Roman numeral to an integer.
+- def count_words(text): # return a dict of word frequencies
+- Write a Python function to check if two strings are anagrams.
+- Write a Python function that returns the n most common words in a text file.
+- Implement a Python function that validates balanced parentheses in a string.
+- Write a Python function that computes the factorial of a number recursively.
+- Write a Python class for a stack with push, pop and peek.
+- Write a Python function that transposes a matrix.
+- Write a Python script that reads a CSV file and prints the average of one column.
+
 ## base (no adapter)
 
 - Write an email to my professor asking for an extension.
@@ -156,7 +180,7 @@ These test step 4b against `data/student/`. **Do not use these as router centroi
 
 | Prompt | Expected route | Expected chunks |
 |---|---|---|
-| Write an email to my databases professor asking for an extension on HW3. | `base` | CS 301 — Late policy and extensions; CS 301 — Assignment deadlines |
+| Write an email to my databases professor asking for an extension on HW3. | `base` | CS 301 — Late policy, late days and how to ask for an extension; CS 301 — Assignment deadlines |
 | When is my linear algebra midterm and what does it cover? | `base` | MATH 221 — Problem set and exam dates |
 | Make me a study plan for next week. | `base` | profile; MATH 221 dates; CS 301 deadlines; PHIL 150 Essay 1 |
 | What's due before the end of October? | `base` | CS 301 — Assignment deadlines; MATH 221 dates; PHIL 150 Essay 1 |

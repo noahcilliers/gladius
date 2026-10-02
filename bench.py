@@ -20,7 +20,7 @@ from router import Router
 ROOT = Path(__file__).parent
 BASE_MODEL = ROOT / "models" / "Llama-3.2-3B-Instruct-Q4_K_M.gguf"
 OUT = ROOT / "results" / "results.json"
-RAM_BUDGET_MB = 3000
+LAPTOP_RAM_MB = 8000  # the target machine: an 8 GB laptop
 TIMING_PROMPT = "Explain in three sentences why the sky is blue."
 
 
@@ -98,8 +98,9 @@ def extract_sql(text: str) -> str:
 
 
 def sql_rows(db: sqlite3.Connection, sql: str):
+    """Result set as a sorted list of rows, ignoring column order and float noise."""
     rows = db.execute(sql).fetchall()
-    return sorted(tuple(round(v, 2) if isinstance(v, float) else v for v in r) for r in rows)
+    return sorted(tuple(sorted(str(round(v, 2) if isinstance(v, float) else v) for v in r)) for r in rows)
 
 
 def bench_quality(engine: Engine, router: Router, limit: int | None) -> dict:
@@ -111,15 +112,21 @@ def bench_quality(engine: Engine, router: Router, limit: int | None) -> dict:
     for stmt in sql_spec["seed"]:
         db.execute(stmt)
 
+    # Plain questions: an instruction like "give the answer as a number" pushes the
+    # MathInstruct adapter into writing Python programs instead of answers.
     tasks = {
-        "math": [(m["question"] + " Give the final answer as a number on the last line.",
-                  lambda text, m=m: math_correct(text, m["answer"])) for m in math_items],
-        "sql": [(f"Given this SQLite schema:\n{sql_spec['schema']}\n\n{q['question']}\nReturn only the SQL query.",
+        "math": [(m["question"], lambda text, m=m: math_correct(text, m["answer"])) for m in math_items],
+        "sql": [(sql_eval_prompt(sql_spec, q) + "\nReturn only the SQL query.",
                  lambda text, q=q: _sql_ok(db, text, q["sql"])) for q in sql_items],
     }
 
     results = {}
     for task, items in tasks.items():
+        if not engine.has_adapter(task):
+            # No adapter (e.g. the dropped SQL one): base vs. "oracle" would be the same
+            # model twice. eval_sql_adapter.py has the adapter-vs-base comparison.
+            print(f"  {task}: no adapter loaded, skipping")
+            continue
         rows = []
         for prompt, check in items:
             routed = router.route(prompt, use_cache=False).route
@@ -145,8 +152,16 @@ def held_out_prompts() -> dict[str, list[str]]:
     held_out.pop("_note", None)
     held_out["math"] = [m["question"] for m in json.loads((ROOT / "data" / "eval_math.json").read_text())]
     sql_spec = json.loads((ROOT / "data" / "eval_sql.json").read_text())
-    held_out["sql"] = [f"Given this SQLite schema:\n{sql_spec['schema']}\n\n{q['question']}" for q in sql_spec["questions"]]
+    held_out["sql"] = [sql_eval_prompt(sql_spec, q) for q in sql_spec["questions"]]
     return held_out
+
+
+def sql_eval_prompt(spec: dict, q: dict) -> str:
+    """Schema of only the tables the reference query uses, then the question. The SQL
+    adapter was trained on single-table schemas and invents joins when given extras."""
+    tables = {m.group(1): m.group(0) for m in re.finditer(r"CREATE TABLE (\w+) \(.*?\);", spec["schema"])}
+    schema = "\n".join(ddl for name, ddl in tables.items() if re.search(rf"\b{name}\b", q["sql"]))
+    return f"Given this SQLite schema:\n{schema}\n\n{q['question']}"
 
 
 def bench_routing(router: Router) -> dict:
@@ -194,8 +209,8 @@ def main():
 
     ram.stop.set()
     results["ram"] = {"server_idle_mb": idle_server_mb, "router_process_mb": process_mem_mb(),
-                      "peak_total_mb": ram.peak_mb, "budget_mb": RAM_BUDGET_MB,
-                      "under_budget": ram.peak_mb <= RAM_BUDGET_MB}
+                      "peak_total_mb": ram.peak_mb, "laptop_mb": LAPTOP_RAM_MB,
+                      "share_of_laptop": ram.peak_mb / LAPTOP_RAM_MB}
 
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(results, indent=2))

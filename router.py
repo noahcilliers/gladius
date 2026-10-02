@@ -18,7 +18,7 @@ import psutil
 
 EMBED_MODEL = "Snowflake/snowflake-arctic-embed-xs"
 EXAMPLES_PATH = Path(__file__).parent / "docs" / "example_prompts.md"
-ROUTES = ("math", "sql", "techwriter", "creative", "base")
+ROUTES = ("math", "sql", "techwriter", "creative", "coding", "base")
 
 # Arctic scores cluster in ~0.58-0.80, and adapter and base scores overlap, so an
 # absolute threshold misroutes real adapter prompts. A small tie-break toward base

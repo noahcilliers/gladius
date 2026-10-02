@@ -88,7 +88,9 @@ Lives in `data/student/` (see its README). Three collections, one per folder:
 | Collection | Source | Used for |
 |---|---|---|
 | `profile` | `profile.md` | Who the student is: major, courses, professors, weekly schedule |
-| `courses` | `courses/*.md` | Syllabi, deadlines, late policies, exam dates, assignment specs |
+| `courses` | `courses/*.md` | Quick facts: deadlines, late policies, exam dates, assignment specs |
+| `syllabi` | `syllabi/*.md` | Full syllabi: objectives, week-by-week schedule, grading scale, attendance, AI-use and integrity policies |
+| `notes` | `notes/*.md` | The student's lecture notes |
 | `schemas` | `schemas/*.md` | Class database schemas (for the `sql` route) |
 
 Chunking: **one `##` section = one chunk**. Headings are written to stand alone (e.g. "CS 301 — Exam dates"), so a chunk makes sense without its file.
@@ -99,13 +101,13 @@ The LoRA adapters were fine-tuned on prompts without injected context. Giving ev
 
 | Route | Always prepend profile? | Search collections | top-k | Why |
 |---|---|---|---|---|
-| `base` | yes | `courses` | 3 | Personal questions: emails, deadlines, study plans |
-| `sql` | no | `schemas` | 1 | Text-to-SQL adapters are trained on *schema + question*, so this matches their training format |
-| `creative` | no | `courses` | 2 | Essay prompts and reading lists, only if they clear the threshold |
-| `math` | no | — | 0 | GSM8K-style adapter; keep its input clean |
+| `base` | yes, if a chunk matched or the prompt is personal (+ deadlines in the next 10 days) | `courses`, `syllabi`, `notes`, `schemas` | 2 | Personal questions: emails, deadlines, study plans, "what did we cover" |
+| `sql` | no | `schemas` (1 slot) + `courses`, `syllabi`, `notes` (1, only ≥ 0.68) | 2 | Answered by the base model now that the SQL adapter is dropped. Schemas go in as bare `CREATE TABLE t (a, b);` lines for the tables the question touches (skipped if the prompt has its own schema) |
+| `creative` | no | `courses`, `syllabi`, `notes` | 1 | Only above a strict 0.70: loose context made the creative adapter answer in the student's voice |
+| `math` | no | `courses`, `syllabi`, `notes` | 2 | Only above a strict 0.70 (no gap rule), so word problems stay clean but "can the final replace my midterm?" gets the syllabus |
 | `techwriter` | no | — | 0 | Not student-specific |
 
-A chunk is injected only if its score ≥ `RAG_THRESHOLD`. If nothing clears it, the prompt goes through unchanged, so "derivative of x³·sin(x)" stays clean.
+A chunk is injected only if its score ≥ `RAG_THRESHOLD` **or** it beats the prompt's median chunk score by `RAG_MIN_GAP`. Arctic gives every chunk ~0.40–0.55 even for off-topic prompts, so an absolute threshold alone can't separate them. If nothing clears it, the prompt goes through unchanged, so "derivative of x³·sin(x)" stays clean.
 
 ### Embedding: query vs. document
 
@@ -138,7 +140,7 @@ If the context doesn't answer the question, say so instead of guessing.
 ...profile.md (base route only)...
 
 ## Context
-[courses/cs301.md · CS 301 — Late policy and extensions]
+[courses/cs301.md · CS 301 — Late policy, late days and how to ask for an extension]
 ...
 </system>
 <user> original prompt </user>
@@ -150,11 +152,13 @@ The UI lists the `[file · heading]` tags under the answer as "sources used".
 
 | Setting | Default | What it does |
 |---|---|---|
-| `RAG_THRESHOLD` | 0.30 | Chunks scoring below this are dropped. Calibrate like `ROUTE_THRESHOLD` |
-| `MAX_CONTEXT_TOKENS` | 700 | Hard cap on the context block (profile ~120 + 3 chunks × ~200) |
+| `RAG_THRESHOLD` | 0.57 | A chunk scoring at least this is kept |
+| `RAG_MIN_GAP` | 0.14 | …or one scoring this far above the prompt's median chunk |
+| `MAX_CONTEXT_TOKENS` | 900 | Cap on profile + upcoming deadlines + chunks; weakest chunks dropped first |
+| `UPCOMING_DAYS` | 10 | Calendar window added to the profile on `base` |
 | `ROUTE_RAG` | table above | Per-route profile / collections / top-k |
 
-The defaults are guesses. Calibrate them on the personal eval prompts in `example_prompts.md`.
+Calibrated on `data/rag_eval.json` (21 prompts incl. 4 negative controls): `python retriever.py` prints per-prompt hits and scores. Current: 90% hit rate, 82% mean recall, 0/4 false injections.
 
 ### Budget impact
 

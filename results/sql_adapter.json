@@ -1,0 +1,488 @@
+{
+  "original": {
+    "summary": {
+      "sql": {
+        "accuracy": 0.8,
+        "runs_as_is": 0.8,
+        "tokens_mean": 25.7,
+        "total_ms_mean": 4134.248908096924
+      },
+      "base": {
+        "accuracy": 0.9,
+        "runs_as_is": 0.9,
+        "tokens_mean": 18.6,
+        "total_ms_mean": 3497.364691621624
+      }
+    },
+    "rows": [
+      {
+        "question": "How many students are there?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 6,
+          "total_ms": 2302.2684170864522,
+          "answer": "SELECT COUNT(*) FROM students"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 7,
+          "total_ms": 1317.58829113096,
+          "answer": "SELECT COUNT(*) FROM students;"
+        }
+      },
+      {
+        "question": "List the names of students majoring in Computer Science.",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 12,
+          "total_ms": 1588.4052498731762,
+          "answer": "SELECT name FROM students WHERE major = 'Computer Science'"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 12,
+          "total_ms": 1876.28766708076,
+          "answer": "SELECT name FROM students WHERE major = 'Computer Science';"
+        }
+      },
+      {
+        "question": "What is the average GPA for each major?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 12,
+          "total_ms": 1546.2425001896918,
+          "answer": "SELECT AVG(gpa), major FROM students GROUP BY major"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 14,
+          "total_ms": 1995.6978750415146,
+          "answer": "SELECT major, AVG(gpa) FROM students GROUP BY major;"
+        }
+      },
+      {
+        "question": "Which student has the highest GPA? Return their name.",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 13,
+          "total_ms": 1841.8671668041497,
+          "answer": "SELECT name FROM students ORDER BY gpa DESC LIMIT 1"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 14,
+          "total_ms": 2063.660291954875,
+          "answer": "SELECT name FROM students ORDER BY gpa DESC LIMIT 1;"
+        }
+      },
+      {
+        "question": "How many students are enrolled in each course? Return the course title and the count.",
+        "tables": 2,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 33,
+          "total_ms": 4481.999166077003,
+          "answer": "SELECT T1.title, COUNT(*) FROM courses AS T1 JOIN enrollments AS T2 ON T1.id = T2.course_id GROUP BY T1.id"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 38,
+          "total_ms": 5864.3493328709155,
+          "answer": "SELECT T1.title, COUNT(T2.student_id) FROM courses AS T1 LEFT JOIN enrollments AS T2 ON T1.id = T2.course_id GROUP BY T1.id"
+        }
+      },
+      {
+        "question": "List the names of students who are not enrolled in any course.",
+        "tables": 2,
+        "sql": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 29,
+          "total_ms": 3163.403666112572,
+          "answer": "SELECT name FROM students WHERE NOT major = ANY(major) AND NOT gpa = ANY(grade) AND NOT year = ANY(year)"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 17,
+          "total_ms": 2712.5647920183837,
+          "answer": "SELECT name FROM students WHERE id NOT IN (SELECT student_id FROM enrollments)"
+        }
+      },
+      {
+        "question": "What is the total number of credits each enrolled student is taking? Return the student name and total credits.",
+        "tables": 3,
+        "sql": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 107,
+          "total_ms": 16838.72108301148,
+          "answer": "SELECT T1.name, T1.credits FROM students AS T1 JOIN enrollments AS T2 ON T1.id = T2.student_id JOIN courses AS T3 ON T2.course_id = T3.id WHERE T3.title = 'Math' INTERSECT SELECT T1.name, T1.credits FROM students AS T1 JOIN enrollments AS T2 ON T1.id = T2.student_id JOIN courses AS T3 ON T2.course_id = T3.id WHERE T3.dept = 'Math'"
+        },
+        "base": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 38,
+          "total_ms": 8534.56037514843,
+          "answer": "SELECT T1.name, SUM(T2.credits) FROM students AS T1 INNER JOIN enrollments AS T2 ON T1.id = T2.student_id GROUP BY T1.name"
+        }
+      },
+      {
+        "question": "Find the names of students whose GPA is above the average GPA of all students.",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 18,
+          "total_ms": 3650.0544159207493,
+          "answer": "SELECT name FROM students WHERE gpa > (SELECT AVG(gpa) FROM students)"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 18,
+          "total_ms": 3837.555625010282,
+          "answer": "SELECT name FROM students WHERE gpa > (SELECT AVG(gpa) FROM students)"
+        }
+      },
+      {
+        "question": "List the titles of Mathematics department courses worth more than 3 credits.",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 17,
+          "total_ms": 3553.9591659326106,
+          "answer": "SELECT title FROM courses WHERE dept = 'Mathematics' AND credits > 3"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 17,
+          "total_ms": 3687.351416097954,
+          "answer": "SELECT title FROM courses WHERE credits > 3 AND dept = 'Mathematics'"
+        }
+      },
+      {
+        "question": "How many distinct majors are there?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 10,
+          "total_ms": 2375.5682499613613,
+          "answer": "SELECT COUNT(DISTINCT major) FROM students"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 11,
+          "total_ms": 3084.0312498621643,
+          "answer": "SELECT COUNT(DISTINCT major) FROM students;"
+        }
+      }
+    ]
+  },
+  "single_table": {
+    "summary": {
+      "sql": {
+        "accuracy": 0.7333333333333333,
+        "runs_as_is": 0.7333333333333333,
+        "tokens_mean": 16.266666666666666,
+        "total_ms_mean": 3441.3437445182353
+      },
+      "base": {
+        "accuracy": 0.9333333333333333,
+        "runs_as_is": 0.9333333333333333,
+        "tokens_mean": 15.266666666666667,
+        "total_ms_mean": 3709.202797198668
+      }
+    },
+    "rows": [
+      {
+        "question": "How many students are in year 1?",
+        "tables": 1,
+        "sql": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 19,
+          "total_ms": 3908.246625214815,
+          "answer": "SELECT COUNT(*) FROM students WHERE gpa > 3.5 AND year = 1"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 12,
+          "total_ms": 3254.9423340242356,
+          "answer": "SELECT COUNT(*) FROM students WHERE year = 1;"
+        }
+      },
+      {
+        "question": "What is the lowest GPA among Biology majors?",
+        "tables": 1,
+        "sql": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 21,
+          "total_ms": 4992.825624998659,
+          "answer": "SELECT MIN(gpa) FROM students WHERE major = \"Biology\" AND year = \"Senior\""
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 15,
+          "total_ms": 5063.312958925962,
+          "answer": "SELECT MIN(gpa) FROM students WHERE major = 'Biology';"
+        }
+      },
+      {
+        "question": "List the names of students with a GPA between 3.0 and 3.6.",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 18,
+          "total_ms": 4203.250624937937,
+          "answer": "SELECT name FROM students WHERE gpa BETWEEN 3.0 AND 3.6"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 19,
+          "total_ms": 4124.357332941145,
+          "answer": "SELECT name FROM students WHERE gpa BETWEEN 3.0 AND 3.6;"
+        }
+      },
+      {
+        "question": "Which majors have more than one student?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 16,
+          "total_ms": 3155.3673748858273,
+          "answer": "SELECT major FROM students GROUP BY major HAVING COUNT(name) > 1"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 17,
+          "total_ms": 4207.6800828799605,
+          "answer": "SELECT major FROM students GROUP BY major HAVING COUNT(id) > 1;"
+        }
+      },
+      {
+        "question": "What is the average GPA of students in year 3 or higher?",
+        "tables": 1,
+        "sql": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 19,
+          "total_ms": 4397.309000138193,
+          "answer": "SELECT AVG(gpa) FROM students WHERE major = 'Math' AND year >= 3"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 14,
+          "total_ms": 3771.3549158070236,
+          "answer": "SELECT AVG(gpa) FROM students WHERE year >= 3;"
+        }
+      },
+      {
+        "question": "List the names of the three students with the lowest GPA.",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 12,
+          "total_ms": 2503.1158751808107,
+          "answer": "SELECT name FROM students ORDER BY gpa LIMIT 3"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 13,
+          "total_ms": 3085.8846670016646,
+          "answer": "SELECT name FROM students ORDER BY gpa LIMIT 3;"
+        }
+      },
+      {
+        "question": "How many students are there in each year?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 11,
+          "total_ms": 2583.9125409256667,
+          "answer": "SELECT COUNT(*), year FROM students GROUP BY year"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 13,
+          "total_ms": 3238.0198331084102,
+          "answer": "SELECT COUNT(*) ,  year FROM students GROUP BY year;"
+        }
+      },
+      {
+        "question": "What is the name of the Economics major with the highest GPA?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 20,
+          "total_ms": 3862.8754999954253,
+          "answer": "SELECT name FROM students WHERE major = \"Economics\" ORDER BY gpa DESC LIMIT 1"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 20,
+          "total_ms": 4374.076165957376,
+          "answer": "SELECT name FROM students WHERE major = 'Economics' ORDER BY gpa DESC LIMIT 1"
+        }
+      },
+      {
+        "question": "What is the total number of credits offered by the Mathematics department?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 15,
+          "total_ms": 3561.7774999700487,
+          "answer": "SELECT SUM(credits) FROM courses WHERE dept = 'Mathematics'"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 15,
+          "total_ms": 3699.7721248771995,
+          "answer": "SELECT SUM(credits) FROM courses WHERE dept = 'Mathematics';"
+        }
+      },
+      {
+        "question": "List the course titles that have exactly 4 credits.",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 10,
+          "total_ms": 2254.3420421425253,
+          "answer": "SELECT title FROM courses WHERE credits = 4"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 11,
+          "total_ms": 2695.5999170895666,
+          "answer": "SELECT title FROM courses WHERE credits = 4;"
+        }
+      },
+      {
+        "question": "Which department offers the most courses?",
+        "tables": 1,
+        "sql": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 19,
+          "total_ms": 3209.8971670493484,
+          "answer": "SELECT dept, COUNT(*) FROM courses GROUP BY dept ORDER BY COUNT(*) DESC LIMIT 1"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 17,
+          "total_ms": 3598.555708071217,
+          "answer": "SELECT dept FROM courses GROUP BY dept ORDER BY COUNT(id) DESC LIMIT 1"
+        }
+      },
+      {
+        "question": "What is the average number of credits per course in each department?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 12,
+          "total_ms": 2501.265458064154,
+          "answer": "SELECT AVG(credits), dept FROM courses GROUP BY dept"
+        },
+        "base": {
+          "correct": false,
+          "runs_as_is": false,
+          "tokens": 11,
+          "total_ms": 2622.2439580596983,
+          "answer": "SELECT AVG(credits) FROM courses GROUP BY dept"
+        }
+      },
+      {
+        "question": "What is the highest grade recorded in course 3?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 15,
+          "total_ms": 3000.2462919801474,
+          "answer": "SELECT MAX(grade) FROM enrollments WHERE course_id = 3"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 16,
+          "total_ms": 3824.156834045425,
+          "answer": "SELECT MAX(grade) FROM enrollments WHERE course_id = 3;"
+        }
+      },
+      {
+        "question": "How many enrollments have a grade below 3.2?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 14,
+          "total_ms": 3444.813083158806,
+          "answer": "SELECT COUNT(*) FROM enrollments WHERE grade < 3.2"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 15,
+          "total_ms": 3914.897667011246,
+          "answer": "SELECT COUNT(*) FROM enrollments WHERE grade < 3.2;"
+        }
+      },
+      {
+        "question": "Which student IDs are enrolled in more than one course?",
+        "tables": 1,
+        "sql": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 23,
+          "total_ms": 4040.9114591311663,
+          "answer": "SELECT student_id FROM enrollments GROUP BY student_id HAVING COUNT(DISTINCT course_id) > 1"
+        },
+        "base": {
+          "correct": true,
+          "runs_as_is": true,
+          "tokens": 21,
+          "total_ms": 4163.187458179891,
+          "answer": "SELECT student_id FROM enrollments GROUP BY student_id HAVING COUNT(course_id) > 1;"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "gladius-retro",
+      "runtimeExecutable": "/opt/miniconda3/envs/ml-env/bin/streamlit",
+      "runtimeArgs": [
+        "run",
+        "retro.py",
+        "--server.headless",
+        "true",
+        "--server.port",
+        "8503",
+        "--client.toolbarMode",
+        "minimal",
+        "--theme.base",
+        "dark",
+        "--theme.primaryColor",
+        "#ff8a1f",
+        "--theme.backgroundColor",
+        "#090604",
+        "--theme.secondaryBackgroundColor",
+        "#110b06",
+        "--theme.textColor",
+        "#f6e6d3",
+        "--theme.font",
+        "monospace"
+      ],
+      "port": 8503
+    }
+  ]
+}
