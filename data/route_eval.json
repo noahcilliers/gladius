@@ -1,0 +1,24 @@
+{
+  "_note": "Held-out routing prompts (not in docs/example_prompts.md). bench.py also adds every math and SQL eval question.",
+  "techwriter": [
+    "Write a datasheet overview for a 100GbE QSFP28 active optical cable.",
+    "Draft the user-guide section explaining how to update NIC firmware from the command line.",
+    "Write release notes for a switch OS update that fixes a BGP memory leak.",
+    "Write an application note on configuring RDMA over Converged Ethernet on Linux hosts.",
+    "Summarize the key features of a 32-port 100GbE spine switch for a product brief."
+  ],
+  "creative": [
+    "What would Kierkegaard think about online dating?",
+    "Write a reflective piece about the last day of summer.",
+    "Brainstorm five premises for a story about a city where it never stops raining.",
+    "Is a promise a kind of time machine? Explore the idea.",
+    "Write a meditative passage about watching the tide come in."
+  ],
+  "base": [
+    "Write an email to my landlord about a broken heater.",
+    "What are some tips for a first job interview at a coffee shop?",
+    "Summarize the plot of Romeo and Juliet in two sentences.",
+    "How do I make my resume stand out?",
+    "What's a healthy breakfast I can make in five minutes?"
+  ]
+}

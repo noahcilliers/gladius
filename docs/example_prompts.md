@@ -2,15 +2,17 @@
 
 Use these as **router centroid examples** (20–50 per route is the target; these are starters) and as **demo prompts**.
 
-Base: `unsloth/Llama-3.2-3B-Instruct`
+Base: `meta-llama/Llama-3.2-3B-Instruct` (served as `bartowski/Llama-3.2-3B-Instruct-GGUF`, Q4_K_M)
 
-| Route | Adapter |
-|---|---|
-| `math` | SriSanth2345/LLAMA-3.2-3B-MathInstruct_LORA_SFT |
-| `sql` | BY-ALF/llama-3.2-3b-sql-lora (or jeeejeee/llama32-3b-text2sql-spider) |
-| `techwriter` | Shankarblr/Llama-3.2-3B-TechWriter-LoRA |
-| `creative` | Brie (Llama 3.2 3B version; verify base in adapter_config.json) |
-| `base` | No adapter (fallback) |
+| Route | Adapter | Size | LoRA |
+|---|---|---|---|
+| `math` | SriSanthM/LLAMA-3.2-3B-MathInstruct_LORA_SFT | 49 MB | r=8, all linear |
+| `sql` | BY-ALF/llama-3.2-3b-sql-lora | 18 MB | r=16, q/v |
+| `techwriter` | Shankarblr/Llama-3.2-3B-TechWriter-LoRA | 97 MB | r=16, all linear |
+| `creative` | closestfriend/brie-llama-3b | 18 MB | r=16, q/v |
+| `base` | No adapter (fallback) | | |
+
+Don't use jeeejeee/llama32-3b-text2sql-spider: it's 1.6 GB because it also trains `embed_tokens` and `lm_head`.
 
 ---
 
@@ -26,6 +28,18 @@ Base: `unsloth/Llama-3.2-3B-Instruct`
 - Integrate 2x·e^(x²) dx.
 - A recipe needs 3/4 cup of sugar for 12 cookies. How much for 30 cookies?
 - What is the probability of rolling a sum of 7 with two dice?
+- A car loses 15% of its value each year. What is a $20,000 car worth after 3 years?
+- What is the sum of the first 50 positive integers?
+- Simplify (x² − 9)/(x − 3).
+- A rectangle's length is twice its width and its perimeter is 36 cm. Find its area.
+- If 3 workers paint a house in 8 days, how long would 4 workers take?
+- What is 15% of 240?
+- Convert 0.375 to a fraction in lowest terms.
+- Solve the system: 2x + y = 7 and x − y = 2.
+- What is the limit of sin(x)/x as x approaches 0?
+- I invest $1,000 at 5% interest compounded annually. How much do I have after 10 years?
+- A bag has 4 red and 6 blue marbles. What's the probability of drawing two red without replacement?
+- How long does it take to drive 210 miles at 55 mph?
 
 ## sql
 
@@ -39,6 +53,18 @@ Base: `unsloth/Llama-3.2-3B-Instruct`
 - Delete all rows from `sessions` older than 30 days.
 - Given `products(id, name, price, category)`, get the most expensive product in each category.
 - Write a SQL query to find the second highest salary.
+- Write a query to find all orders placed in the last 7 days.
+- Given `enrollments(student_id, course_id, grade)`, find students who took more than 3 courses.
+- How do I rename a column in PostgreSQL?
+- Write a query that returns the running total of sales by date.
+- Increase the price of every product in the 'electronics' category by 10%.
+- Create a table for blog posts with a foreign key to an authors table.
+- Write a query to rank employees by salary within each department.
+- Select all users whose email ends with '@gmail.com'.
+- Show the difference between LEFT JOIN and INNER JOIN with an example query.
+- Write a query to pivot monthly revenue into one column per month.
+- Find customers who placed orders in both 2023 and 2024.
+- Given `logins(user_id, login_time)`, count daily active users.
 
 ## techwriter
 
@@ -50,6 +76,18 @@ Base: `unsloth/Llama-3.2-3B-Instruct`
 - Draft release notes for a firmware update that improves RDMA latency.
 - Write a feature overview of RoCE v2 support for a data-center NIC.
 - Write a quick-start guide for installing a converged network adapter.
+- Write a product overview for a dual-port 25GbE SFP28 NIC.
+- Draft the "Key Features" section of a datasheet for a SmartNIC.
+- Write the installation prerequisites for a PCIe network adapter driver on Linux.
+- Write a troubleshooting section for link-down errors on a fiber transceiver.
+- Draft a technical brief comparing iSCSI offload and NVMe-over-Fabrics offload.
+- Write release notes for a driver update that adds SR-IOV support.
+- Write a configuration guide for enabling jumbo frames on a 10GbE adapter.
+- Summarize the power and thermal specifications of a top-of-rack switch for a datasheet.
+- Write an application note on tuning interrupt moderation for low-latency workloads.
+- Draft a solution brief for running a NIC with DPDK in a Kubernetes cluster.
+- Describe the hardware specifications of a 400GbE QSFP-DD optical module for a datasheet.
+- Write an FAQ section for customers upgrading switch firmware.
 
 ## creative
 
@@ -61,6 +99,18 @@ Base: `unsloth/Llama-3.2-3B-Instruct`
 - Reflect on what it means to "own" a thought.
 - Write a short meditative passage about waiting for a bus in the rain.
 - How might Simone de Beauvoir think about social media identity?
+- What would Camus say about the daily commute?
+- Write a short reflective essay on the beauty of unfinished things.
+- Brainstorm ten titles for a novel about a lighthouse keeper who collects lost letters.
+- Is nostalgia a form of time travel? Reflect on it.
+- How might Nietzsche react to productivity apps?
+- Write a lyrical paragraph about the first snowfall in a quiet town.
+- Explore the idea that every map is also a story.
+- Give me three surreal story openings about a library that rearranges itself overnight.
+- What does silence sound like? Write a meditation on it.
+- Reflect on the ethics of remembering versus forgetting.
+- Imagine a dialogue between Socrates and a smartphone.
+- Write a contemplative piece about strangers sharing a night train.
 
 ## base (no adapter)
 
@@ -72,6 +122,18 @@ Base: `unsloth/Llama-3.2-3B-Instruct`
 - Translate "Where is the library?" into Spanish.
 - What should I pack for a weekend camping trip?
 - Rewrite this sentence to sound more professional: "hey can u send the notes"
+- How do I make a monthly budget as a college student?
+- Write a thank-you note to my roommate for helping me move.
+- What's the difference between weather and climate?
+- Give me a 3-day beginner workout plan.
+- How do I cite a website in APA format?
+- Suggest a few easy dinners I can make with rice and eggs.
+- What are good ways to stay focused while studying?
+- Explain how vaccines work in simple terms.
+- Draft a LinkedIn message asking an alum for a coffee chat.
+- What's the capital of Australia?
+- How should I prepare for a group presentation?
+- Any tips for sleeping better during exam week?
 
 ---
 
@@ -87,6 +149,25 @@ Use these live to show the router is measuring similarity, not matching keywords
 | Write a product brief, but make it philosophical. | `techwriter` vs `creative` |
 | hey whats up | `base` (low similarity to all adapters) |
 | What is 2 + 2? | `math` (sanity check) |
+
+## Personal prompts (RAG eval)
+
+These test step 4b against `data/student/`. **Do not use these as router centroid examples.** Score each one on two things: did the right chunks come back, and is the answer correct with RAG on vs. off.
+
+| Prompt | Expected route | Expected chunks |
+|---|---|---|
+| Write an email to my databases professor asking for an extension on HW3. | `base` | CS 301 — Late policy and extensions; CS 301 — Assignment deadlines |
+| When is my linear algebra midterm and what does it cover? | `base` | MATH 221 — Problem set and exam dates |
+| Make me a study plan for next week. | `base` | profile; MATH 221 dates; CS 301 deadlines; PHIL 150 Essay 1 |
+| What's due before the end of October? | `base` | CS 301 — Assignment deadlines; MATH 221 dates; PHIL 150 Essay 1 |
+| When are Prof. Okafor's office hours? | `base` | MATH 221 — Course overview and instructor |
+| Count how many students are enrolled in each course this semester. | `sql` | CS 301 — University class database schema |
+| Which bike stations have the most rides starting from them? | `sql` | CS 301 — Bike-share project database schema |
+| Help me outline my Heidegger essay. | `creative` | PHIL 150 — Essay 1 prompt and requirements |
+| What's the derivative of x³·sin(x)? | `math` | none (negative control: nothing should be injected) |
+| hey whats up | `base` | profile only (no course chunk should clear the threshold) |
+
+Expected answers are in the corpus files. For example, the extension email should name Prof. Chen, mention the 48-hour rule, and reference the Oct 9 HW3 deadline.
 
 ## Eval split
 

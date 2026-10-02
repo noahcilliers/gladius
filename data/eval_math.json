@@ -1,0 +1,12 @@
+[
+  {"question": "Maria buys 3 notebooks at $4.50 each and a pen for $2.25. She pays with a $20 bill. How much change does she get?", "answer": 4.25},
+  {"question": "A school has 480 students and 35% of them take the bus. How many students take the bus?", "answer": 168},
+  {"question": "A baker makes 12 trays of muffins with 18 muffins on each tray. He sells 150 muffins. How many muffins are left?", "answer": 66},
+  {"question": "Tom reads 25 pages a day. His book has 410 pages and he has already read 110. How many more days does he need to finish it?", "answer": 12},
+  {"question": "A phone costs $640. It is on sale for 15% off, and then 8% sales tax is added to the sale price. What is the final price?", "answer": 587.52},
+  {"question": "Two numbers add up to 56, and one is 3 times the other. What is the larger number?", "answer": 42},
+  {"question": "A cyclist rides at 18 km/h for 2.5 hours, then at 12 km/h for 1.5 hours. How many kilometers does she ride in total?", "answer": 63},
+  {"question": "A rectangular garden is 14 m long and 9 m wide. Fencing costs $6 per meter. How much does it cost to fence the whole garden?", "answer": 276},
+  {"question": "Jake earns $15 per hour and works 6 hours a day, 5 days a week. How much does he earn in 4 weeks?", "answer": 1800},
+  {"question": "A 200-liter tank is 40% full. A pump adds 15 liters per minute. How many minutes until the tank is full?", "answer": 8}
+]

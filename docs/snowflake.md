@@ -18,10 +18,11 @@ Start with xs. Only move up if leave-one-out accuracy is poor *after* adding mor
 
 ## Where it sits in the pipeline
 
-It runs in two places:
+It runs in three places:
 
 1. **At startup:** embeds every prompt in example_prompts.md to build the route centroids.
-2. **Per prompt:** embeds the user's prompt so the router can compare it to the centroids and the cache.
+2. **At startup:** embeds every chunk in `data/student/` for RAG (see pipeline.md, step 4b).
+3. **Per prompt:** embeds the user's prompt. That one vector is used by the cache, the router and the retriever.
 
 It never touches the LLM's input or output.
 
@@ -55,6 +56,7 @@ vecs = model.encode(texts, prompt_name="query", normalize_embeddings=True)
 ```
 
 - `prompt_name="query"` adds Arctic's built-in query prefix. Use it for **both** example prompts and user prompts so they're embedded the same way.
+- **Exception: RAG corpus chunks get no prefix.** Arctic is asymmetric. Queries get the prefix and documents don't. Routing compares query to query; retrieval compares query to document.
 - `normalize_embeddings=True` makes every vector length 1, so `centroid @ vec` is cosine similarity.
 
 The full implementation (centroids, cache, leave-one-out eval) is in `router.py`.

@@ -1,0 +1,20 @@
+{
+  "schema": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT, major TEXT, gpa REAL, year INTEGER);\nCREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT, dept TEXT, credits INTEGER);\nCREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, grade REAL);",
+  "seed": [
+    "INSERT INTO students VALUES (1,'Ava','Computer Science',3.8,3),(2,'Ben','Mathematics',3.2,2),(3,'Cara','Biology',3.5,4),(4,'Dev','Computer Science',2.9,1),(5,'Eli','Economics',3.6,2),(6,'Fay','Mathematics',3.9,3),(7,'Gus','Biology',2.7,1),(8,'Hana','Economics',3.1,4)",
+    "INSERT INTO courses VALUES (1,'Algorithms','Computer Science',4),(2,'Databases','Computer Science',3),(3,'Linear Algebra','Mathematics',4),(4,'Statistics','Mathematics',3),(5,'Genetics','Biology',4),(6,'Real Analysis','Mathematics',5)",
+    "INSERT INTO enrollments VALUES (1,1,3.7),(1,2,3.9),(2,3,3.0),(2,4,3.4),(3,5,3.6),(4,1,2.8),(4,2,3.0),(5,4,3.5),(6,3,4.0),(6,6,3.8),(3,4,3.3),(5,2,3.1)"
+  ],
+  "questions": [
+    {"question": "How many students are there?", "sql": "SELECT COUNT(*) FROM students"},
+    {"question": "List the names of students majoring in Computer Science.", "sql": "SELECT name FROM students WHERE major = 'Computer Science'"},
+    {"question": "What is the average GPA for each major?", "sql": "SELECT major, AVG(gpa) FROM students GROUP BY major"},
+    {"question": "Which student has the highest GPA? Return their name.", "sql": "SELECT name FROM students ORDER BY gpa DESC LIMIT 1"},
+    {"question": "How many students are enrolled in each course? Return the course title and the count.", "sql": "SELECT c.title, COUNT(*) FROM courses c JOIN enrollments e ON e.course_id = c.id GROUP BY c.id"},
+    {"question": "List the names of students who are not enrolled in any course.", "sql": "SELECT name FROM students WHERE id NOT IN (SELECT student_id FROM enrollments)"},
+    {"question": "What is the total number of credits each enrolled student is taking? Return the student name and total credits.", "sql": "SELECT s.name, SUM(c.credits) FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id GROUP BY s.id"},
+    {"question": "Find the names of students whose GPA is above the average GPA of all students.", "sql": "SELECT name FROM students WHERE gpa > (SELECT AVG(gpa) FROM students)"},
+    {"question": "List the titles of Mathematics department courses worth more than 3 credits.", "sql": "SELECT title FROM courses WHERE dept = 'Mathematics' AND credits > 3"},
+    {"question": "How many distinct majors are there?", "sql": "SELECT COUNT(DISTINCT major) FROM students"}
+  ]
+}
