@@ -98,4 +98,5 @@ done
 step "Caching the router's embedding model"
 "$PY" -c "from sentence_transformers import SentenceTransformer; from router import EMBED_MODEL; SentenceTransformer(EMBED_MODEL, device='cpu')"
 
+touch .venv/.setup-complete   # run.sh prefers .venv only once this exists
 step "Setup complete. Start Gladius with: ./run.sh"

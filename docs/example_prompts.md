@@ -89,6 +89,14 @@ Don't use jeeejeee/llama32-3b-text2sql-spider: it's 1.6 GB because it also train
 - Draft a solution brief for running a NIC with DPDK in a Kubernetes cluster.
 - Describe the hardware specifications of a 400GbE QSFP-DD optical module for a datasheet.
 - Write an FAQ section for customers upgrading switch firmware.
+- Write technical documentation for the parse_config() function in my project.
+- Write documentation for my compute_average function.
+- Write an API reference for the load_data() function in utils.py.
+- Document the functions in my project code for a README.
+- Write a user-guide section explaining how to use my grading script.
+- Write reference documentation for the helper function in my notes.
+- Write technical documentation for a Python function from my course project.
+- Write developer documentation for the functions in my code notes.
 
 ## creative
 

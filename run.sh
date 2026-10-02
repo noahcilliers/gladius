@@ -43,6 +43,7 @@ print(f'  server memory {e.server_mem_mb():.0f} MB')
 "
 
 exec "$PY" -m streamlit run retro.py --server.headless true --server.port "$UI_PORT" \
+  --server.fileWatcherType none \
   --client.toolbarMode minimal --theme.base dark --theme.primaryColor "#ff8a1f" \
   --theme.backgroundColor "#090604" --theme.secondaryBackgroundColor "#110b06" \
   --theme.textColor "#f6e6d3" --theme.font monospace

@@ -39,7 +39,7 @@ CODE_ROUTES = {"sql": "sql", "coding": "python"}  # adapters that answer with ba
 
 STARTERS = [
     ("math", "A phone costs $640. It's 15% off, then 8% sales tax is added. What's the final price?"),
-    ("sql", "Given `employees(id, name, department, salary)`, list the employees in the Sales department who earn more than 50000. Return only the SQL query."),
+    ("techwriter", "Write technical documentation for the late_penalty() function in my CS 301 project."),
     ("coding", "Write a Python function that returns the second largest number in a list."),
     ("creative", "What would Kierkegaard think about group chats?"),
 ]
@@ -99,6 +99,9 @@ header[data-testid="stHeader"]{background:transparent!important}
 .st-key-new button{border-color:var(--pink);color:var(--pink);letter-spacing:.2em;font-weight:700;
   box-shadow:0 0 10px rgba(255,138,31,.25),inset 0 0 10px rgba(255,138,31,.08)}
 .st-key-new button:hover{background:var(--pink);color:#090604;border-color:var(--pink);box-shadow:0 0 18px rgba(255,138,31,.7)}
+[data-testid="stPopover"] button{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:4px;font-size:12.5px}
+[data-testid="stPopover"] button:hover{border-color:var(--pink);color:var(--pink);box-shadow:0 0 12px rgba(255,138,31,.35)}
+[data-testid="stPopoverBody"]{background:var(--panel)!important;border:1px solid var(--line)}
 .st-key-sessions [data-testid="stVerticalBlock"]{gap:.2rem}
 .st-key-sessions [data-testid="stHorizontalBlock"]{gap:.25rem;align-items:center}
 .st-key-sessions button{border-color:transparent;justify-content:flex-start;text-align:left;padding:.25rem .55rem;min-height:0;color:var(--dim)}
@@ -246,6 +249,13 @@ def delete_session(sid: str):
     st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != sid]
     if st.session_state.active == sid:
         st.session_state.active = None
+    save_sessions()
+
+
+def clear_sessions():
+    """Wipe every saved chat (for a clean sidebar before a demo)."""
+    st.session_state.sessions = []
+    st.session_state.active = None
     save_sessions()
 
 
@@ -432,6 +442,15 @@ with st.sidebar:
     if st.button("CLEAR ROUTER CACHE", width="stretch"):
         router.clear_cache()
         st.rerun()
+    saved = sum(1 for s in st.session_state.sessions if s["turns"])
+    # Behind a popover so a stray click mid-demo can't wipe the sidebar.
+    # Swapping to a plain button once empty also closes the popover after a clear.
+    if saved:
+        with st.popover("CLEAR ALL SESSIONS", width="stretch"):
+            st.button(f"DELETE {saved} SESSION{'S' * (saved != 1)}", key="clear_all", width="stretch",
+                      on_click=clear_sessions)
+    else:
+        st.button("CLEAR ALL SESSIONS", key="clear_none", width="stretch", disabled=True)
 
 PLACEHOLDER = "Ask a math, SQL, writing, coding or everyday question…"
 strip = st.empty()  # redrawn while tokens stream, so the RAM meter is live

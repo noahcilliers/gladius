@@ -230,6 +230,12 @@ class Retriever:
         """The prompt the model sees. Unchanged when nothing was retrieved."""
         if not r.hits and not r.profile:
             return prompt
+        if r.route == "techwriter":
+            # The tech-writer adapter copies the context back verbatim under the study-assistant
+            # framing. Request first, then the source, then the sections to write: it documents it.
+            source = "\n\n".join(h.chunk.body for h in r.hits)
+            return (f"{prompt}\n\nHere is the source material from my notes:\n\n{source}\n\n"
+                    "Write the documentation now, with sections for Overview, Parameters, Return values and Example.")
         schemas = [h for h in r.hits if h.chunk.collection == "schemas"] if r.route == "sql" else []
         prose = [h for h in r.hits if h not in schemas]
         ddl = "\n".join(schema_ddl(h.chunk.body, prompt) for h in schemas)
