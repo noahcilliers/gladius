@@ -1,0 +1,16 @@
+# App: router, retriever, UI, benchmarks
+sentence-transformers>=5.0
+streamlit>=1.40
+numpy>=2.2
+psutil>=6.0
+requests>=2.31
+matplotlib>=3.9
+huggingface_hub>=0.34
+safetensors>=0.4
+
+# Build + adapter conversion (llama.cpp's convert_lora_to_gguf.py)
+cmake>=3.28
+torch>=2.6
+transformers>=4.45
+tqdm
+pyyaml
