@@ -18,6 +18,8 @@ from pathlib import Path
 import psutil
 import requests
 
+import settings  # noqa: F401  (loads .env before LLAMA_URL is read)
+
 SERVER_URL = os.environ.get("LLAMA_URL", "http://127.0.0.1:8080")
 
 # CREATE TABLE statements, or `table(col, ...)` signatures in backticks.

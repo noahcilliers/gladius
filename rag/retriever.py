@@ -1,12 +1,14 @@
-"""Route-gated retrieval over the local student corpus (pipeline step 4b).
+"""Route-gated retrieval over the student's workspace (pipeline step 4b).
 
-Chunks are the `##` sections of data/student/**.md, embedded once at startup with the
-router's Arctic Embed model (no second model in memory). Each route decides which
-collections it may see and how many chunks it gets; anything under RAG_THRESHOLD is
-dropped, so prompts unrelated to the student's courses go through unchanged.
+Chunks come from the workspace folder (rag/workspace.py: GLADIUS_WORKSPACE, default the
+sample student in data/student), embedded once at startup with the router's Arctic Embed
+model (no second model in memory). Each route decides which collections it may see and how
+many chunks it gets; anything under RAG_THRESHOLD is dropped, so prompts unrelated to the
+student's courses go through unchanged.
 
-Run directly to score retrieval on data/rag_eval.json (no llama-server needed):
-    python retriever.py
+Run directly to index the workspace, and on the sample workspace also score retrieval on
+data/rag_eval.json (no llama-server needed):
+    python -m rag.retriever
 """
 
 import datetime as dt
@@ -19,12 +21,14 @@ from pathlib import Path
 
 import numpy as np
 
+from rag.workspace import PROFILE_COLLECTION, SAMPLE_WORKSPACE, Chunk, load_chunks, workspace_dir
+from settings import ROOT
+
 _DDL_RE = re.compile(r"CREATE TABLE\s+(\w+)\s*\((.*?)\);", re.S | re.I)
 _PROMPT_SCHEMA_RE = re.compile(r"CREATE TABLE|`\w+\s*\([^`]*\)`", re.I)
 _CONSTRAINTS = ("primary", "foreign", "unique", "check", "constraint")
 
-CORPUS_DIR = Path(__file__).parent / "data" / "student"
-EVAL_PATH = Path(__file__).parent / "data" / "rag_eval.json"
+EVAL_PATH = ROOT / "data" / "rag_eval.json"  # written against the sample workspace
 
 # Arctic scores every chunk ~0.40-0.55 even for off-topic prompts, so neither test works alone.
 # A chunk is kept if it scores high outright, or stands well above this prompt's median chunk.
@@ -56,7 +60,10 @@ _LOGISTICS_RE = re.compile(r"\bwhat'?s due\b|\bdue (?:date|before|by|on|this|nex
 @dataclass(frozen=True)
 class RouteRAG:
     profile: bool  # always prepend profile.md
-    collections: tuple[str, ...]
+    # The collections this route may search, or None for all of them (except "profile"). Names the
+    # workspace doesn't have are dropped, and a list with none left falls back to all: these names are
+    # the sample workspace's folders, so in a student's own folder every route searches everything.
+    collections: tuple[str, ...] | None
     top_k: int
     min_score: float | None = None  # strict per-route cutoff instead of RAG_THRESHOLD / RAG_MIN_GAP
     schema_k: int = 0  # separate slot for the "schemas" collection, under the normal gate
@@ -66,10 +73,10 @@ class RouteRAG:
 # The sql route is answered by the base model (the SQL adapter was dropped). Schemas get their own
 # slot and go in as bare DDL; notes/syllabus prose only on a strong match (>= 0.68), because notes
 # outscore schemas on plain text-to-SQL questions. If a raw-format SQL adapter returns, set
-# collections=() : prose breaks engine.sql_prompt.
+# top_k=0 : prose breaks engine.sql_prompt.
 ROUTE_RAG = {
     "sql": RouteRAG(profile=False, collections=("courses", "syllabi", "notes"), top_k=1, min_score=0.68, schema_k=1),
-    "base": RouteRAG(profile=True, collections=("courses", "syllabi", "notes", "schemas"), top_k=2),
+    "base": RouteRAG(profile=True, collections=None, top_k=2),
     # The creative adapter writes worse with loose context ("What would Kierkegaard think about group
     # chats?" pulled reading notes at 0.59 and answered in the student's voice). Strong matches only.
     "creative": RouteRAG(profile=False, collections=("courses", "syllabi", "notes"), top_k=1, min_score=0.70),
@@ -82,22 +89,6 @@ ROUTE_RAG = {
     "techwriter": RouteRAG(profile=False, collections=("notes",), top_k=1, min_score=0.70),
 }
 NO_RAG = RouteRAG(profile=False, collections=(), top_k=0)
-
-
-@dataclass
-class Chunk:
-    collection: str  # "profile", "courses", "notes" or "schemas"
-    source: str  # path relative to data/student
-    heading: str
-    body: str
-
-    @property
-    def text(self) -> str:
-        return f"{self.heading}\n{self.body}"
-
-    @property
-    def tag(self) -> str:
-        return f"{self.source} · {self.heading}"
 
 
 @dataclass
@@ -118,25 +109,6 @@ class Retrieval:
         return (["profile.md"] if self.profile else []) + [h.chunk.tag for h in self.hits]
 
 
-def load_chunks(root: Path = CORPUS_DIR) -> list[Chunk]:
-    """One `##` section = one chunk. The `#` title and README files are not indexed."""
-    chunks = []
-    for path in sorted(root.rglob("*.md")):
-        if path.name == "README.md":
-            continue
-        rel = path.relative_to(root)
-        collection = rel.parts[0] if len(rel.parts) > 1 else rel.stem
-        heading, lines = None, []
-        for line in path.read_text().splitlines() + ["## "]:
-            if line.startswith("## "):
-                if heading and "\n".join(lines).strip():
-                    chunks.append(Chunk(collection, str(rel), heading, "\n".join(lines).strip()))
-                heading, lines = line[3:].strip(), []
-            elif heading is not None:
-                lines.append(line)
-    return chunks
-
-
 def _today() -> dt.date:
     """GLADIUS_TODAY=YYYY-MM-DD pins the date for demos and benchmarks."""
     pinned = os.environ.get("GLADIUS_TODAY")
@@ -148,14 +120,16 @@ def estimate_tokens(text: str) -> int:
 
 
 class Retriever:
-    def __init__(self, router, root: Path = CORPUS_DIR, threshold: float = RAG_THRESHOLD, min_gap: float = RAG_MIN_GAP):
-        """`router` is a router.Router; its embedding model is reused, not reloaded."""
+    def __init__(self, router, root: Path | None = None, threshold: float = RAG_THRESHOLD, min_gap: float = RAG_MIN_GAP):
+        """`router` is a router.Router; its embedding model is reused, not reloaded. `root` defaults
+        to the configured workspace (GLADIUS_WORKSPACE)."""
         self.router = router
         self.threshold = threshold
         self.min_gap = min_gap
-        self.chunks = load_chunks(root)
+        self.root = root or workspace_dir()
+        self.chunks, self.skipped = load_chunks(self.root)
         # Bold markers cost tokens and the model doesn't need them.
-        self.profile = "\n\n".join(c.body for c in self.chunks if c.collection == "profile").replace("**", "")
+        self.profile = "\n\n".join(c.body for c in self.chunks if c.collection == PROFILE_COLLECTION).replace("**", "")
         self.calendar = [line for c in self.chunks if c.source.endswith("calendar.md")
                          for line in c.body.splitlines() if _CAL_LINE_RE.match(line)]
         # Arctic is asymmetric: queries get the "query" prefix (router.embed), documents get none.
@@ -163,6 +137,12 @@ class Retriever:
             [c.text for c in self.chunks], normalize_embeddings=True, convert_to_numpy=True
         )
         self.collections = np.array([c.collection for c in self.chunks])
+        self.searchable = tuple(str(c) for c in dict.fromkeys(self.collections) if c != PROFILE_COLLECTION)
+
+    def scope(self, collections: tuple[str, ...] | None) -> tuple[str, ...]:
+        """A route's collections as this workspace has them (see RouteRAG.collections)."""
+        present = tuple(c for c in collections or () if c in self.searchable)
+        return present or self.searchable
 
     def retrieve(self, prompt: str, route: str, query_vec: np.ndarray | None = None) -> Retrieval:
         t0 = time.perf_counter()
@@ -174,7 +154,7 @@ class Retriever:
         if cfg.top_k or schema_k:
             vec = query_vec if query_vec is not None else self.router.embed([prompt])[0]
             hits = self.search(vec, ("schemas",), schema_k) if schema_k else []
-            hits += self.search(vec, cfg.collections, cfg.top_k, cfg.min_score) if cfg.top_k else []
+            hits += self.search(vec, self.scope(cfg.collections), cfg.top_k, cfg.min_score) if cfg.top_k else []
             budget = MAX_CONTEXT_TOKENS - (estimate_tokens(self.profile_block()) if cfg.profile else 0)
             kept = []
             for h in hits:  # drop the weakest chunks first if the context budget runs out
@@ -184,7 +164,8 @@ class Retriever:
                 kept.append(h)
             hits = kept
         # Small talk ("hey whats up") skips the ~300-token profile, which keeps first-token time low.
-        profile = cfg.profile and bool(hits or _PERSONAL_RE.search(prompt))
+        # A workspace with no profile.md and nothing coming up in calendar.md has no profile to add.
+        profile = cfg.profile and bool(hits or _PERSONAL_RE.search(prompt)) and bool(self.profile_block())
         return Retrieval(route, hits, profile, (time.perf_counter() - t0) * 1000)
 
     def notes_route(self, prompt: str, route: str, query_vec: np.ndarray | None = None) -> str:
@@ -197,9 +178,11 @@ class Retriever:
         if not _ABOUT_STUDENT_RE.search(prompt):
             return route
         vec = query_vec if query_vec is not None else self.router.embed([prompt])[0]
-        return "base" if self.search(vec, ("courses", "syllabi", "notes"), 1, NOTES_OVERRIDE_MIN) else route
+        return "base" if self.search(vec, self.scope(("courses", "syllabi", "notes")), 1, NOTES_OVERRIDE_MIN) else route
 
     def search(self, vec: np.ndarray, collections: tuple[str, ...], k: int, min_score: float | None = None) -> list[Hit]:
+        if not self.chunks:
+            return []
         all_scores = self.vecs @ vec
         floor = min_score if min_score is not None else min(self.threshold, float(np.median(all_scores)) + self.min_gap)
         idx = np.flatnonzero(np.isin(self.collections, collections))
@@ -311,9 +294,14 @@ if __name__ == "__main__":
     router = Router()
     t0 = time.perf_counter()
     retriever = Retriever(router)
-    counts = {c: int((retriever.collections == c).sum()) for c in dict.fromkeys(retriever.collections)}
+    counts = {str(c): int((retriever.collections == c).sum()) for c in dict.fromkeys(retriever.collections)}
+    print(f"Workspace {retriever.root}")
     print(f"Indexed {len(retriever.chunks)} chunks {counts} in {(time.perf_counter() - t0) * 1000:.0f} ms, "
           f"index {retriever.vecs.nbytes / 1024:.0f} KB")
+    for path, reason in retriever.skipped:
+        print(f"  skipped {path.relative_to(retriever.root)} ({reason})")
+    if retriever.root != SAMPLE_WORKSPACE.resolve():
+        raise SystemExit(f"{EVAL_PATH.name} is written for the sample workspace, so no eval here.")
 
     cases = json.loads(EVAL_PATH.read_text())["cases"]
     res = evaluate(retriever, router, cases)
