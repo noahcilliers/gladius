@@ -2,29 +2,20 @@
 
     ./run.sh                       # starts llama-server if needed, warms adapters, UI on http://localhost:8503
 
-Built on router.py (routing + cache), engine.py (llama-server + adapters) and retriever.py (local notes).
-Sessions persist in results/sessions.json, so a browser refresh keeps them.
+Only drawing lives here. The pipeline (routing, notes, generation) is core.pipeline and saved
+chats are core.sessions; both work without Streamlit.
 """
 
 import html
-import json
-import time
-import uuid
-from pathlib import Path
 
 import requests
 import streamlit as st
 
-from engine import Engine, process_mem_mb
-from retriever import Retriever
-from router import Router
+from core import Options, Pipeline, SessionStore
 
 APP_NAME = "GLADIUS"  # the wordmark: change it here
 TAGLINE = "ONE MODEL · FOUR SPECIALISTS · ZERO CLOUD"
 LAPTOP_RAM_MB = 8000  # the target machine: an 8 GB laptop
-ROOT = Path(__file__).parent
-TURNS_LOG = ROOT / "results" / "turns.jsonl"
-SESSIONS_PATH = ROOT / "results" / "sessions.json"
 
 ACCENT = "#ff8a1f"  # the one colour; keep in sync with --pink/--cyan in CSS and run.sh
 ROUTES = {  # route -> (label, colour)
@@ -212,51 +203,25 @@ st.html(CSS)
 
 
 @st.cache_resource(show_spinner="BOOTING SPECIALISTS…")
-def load():
-    router = Router()
-    router.route("warm-up", use_cache=False)
-    return router, Engine(), Retriever(router)  # retriever reuses the router's embedding model
+def load() -> Pipeline:
+    return Pipeline()
 
 
 # ---------- sessions ----------
 
-def new_session() -> dict:
-    return {"id": uuid.uuid4().hex[:8], "title": "", "created": time.time(), "turns": []}
-
-
-def load_sessions() -> list[dict]:
-    try:
-        return json.loads(SESSIONS_PATH.read_text()) or [new_session()]
-    except (OSError, ValueError):
-        return [new_session()]
-
-
-def save_sessions():
-    SESSIONS_PATH.parent.mkdir(exist_ok=True)
-    SESSIONS_PATH.write_text(json.dumps([s for s in st.session_state.sessions if s["turns"]]))
-
-
 def start_session():
-    """Reuse an empty session instead of stacking blanks."""
-    empty = next((s for s in st.session_state.sessions if not s["turns"]), None)
-    if empty is None:
-        empty = new_session()
-        st.session_state.sessions.insert(0, empty)
-    st.session_state.active = empty["id"]
+    st.session_state.active = st.session_state.store.start()
 
 
 def delete_session(sid: str):
-    st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != sid]
+    st.session_state.store.delete(sid)
     if st.session_state.active == sid:
         st.session_state.active = None
-    save_sessions()
 
 
 def clear_sessions():
-    """Wipe every saved chat (for a clean sidebar before a demo)."""
-    st.session_state.sessions = []
+    st.session_state.store.clear()
     st.session_state.active = None
-    save_sessions()
 
 
 # ---------- rendering ----------
@@ -339,7 +304,7 @@ def pending_trace_html() -> str:
 
 def strip_html(title: str) -> str:
     """Top status strip with the live RAM meter (llama-server + this UI)."""
-    total_mb = engine.server_mem_mb() + process_mem_mb()
+    total_mb = pipeline.memory_mb()
     return (f'<div class="strip"><span class="on"><span class="dot">●</span> LOCAL · OFFLINE</span>'
             f'<span class="ttl">{esc(title or "NEW SESSION").upper()}</span>'
             f'<span class="ram">RAM {meter(total_mb / LAPTOP_RAM_MB, 14)} <b>{total_mb / 1000:.2f}</b> / 8 GB</span></div>')
@@ -363,7 +328,7 @@ def render_stats(r: dict, s: dict):
 
 def display_stream(chunks, route: str):
     """Fence code routes as code blocks; escape $ elsewhere so prices don't render as LaTeX."""
-    lang = CODE_ROUTES.get(route) if engine.has_adapter(route) else None
+    lang = CODE_ROUTES.get(route) if pipeline.has_adapter(route) else None
     if lang:
         yield f"```{lang}\n"
         yield from chunks
@@ -375,9 +340,9 @@ def display_stream(chunks, route: str):
 
 def render_turn(turn: dict):
     render_user(turn["prompt"])
-    if pipeline:  # the trace replaces the route chip
+    if show_trace:  # the trace replaces the route chip
         st.html(trace_html(turn["routing"], turn.get("rag"), turn["stats"]))
-    render_route(turn["routing"], chip=not pipeline)
+    render_route(turn["routing"], chip=not show_trace)
     st.markdown(turn["answer"])
     render_sources(turn.get("rag"))
     render_stats(turn["routing"], turn["stats"])
@@ -399,17 +364,17 @@ def offline(detail: str):
 
 
 try:
-    router, engine, retriever = load()
+    pipeline = load()
 except requests.RequestException as e:
     offline(f"llama-server did not answer on startup ({type(e).__name__}).")
     st.stop()
-if "sessions" not in st.session_state:
-    st.session_state.sessions = load_sessions()
+if "store" not in st.session_state:
+    st.session_state.store = SessionStore()
     st.session_state.active = None
-    st.session_state.last_route = None  # the adapter the server ran last, shared by every session
-if st.session_state.active not in {s["id"] for s in st.session_state.sessions}:
+store = st.session_state.store
+if store.get(st.session_state.active) is None:
     start_session()
-session = next(s for s in st.session_state.sessions if s["id"] == st.session_state.active)
+session = store.get(st.session_state.active)
 
 with st.sidebar:
     st.html(f'<div class="brand"><pre>{SWORD}</pre><div class="name">{APP_NAME}</div>'
@@ -419,7 +384,7 @@ with st.sidebar:
 
     st.html('<div class="sec">SESSIONS</div>')
     with st.container(key="sessions"):
-        for s in st.session_state.sessions:
+        for s in store.sessions:
             if not s["turns"] and s["id"] != session["id"]:
                 continue
             name, x = st.columns([7, 1])
@@ -435,14 +400,14 @@ with st.sidebar:
     force = st.selectbox("Specialist", ["auto"] + list(ROUTES), label_visibility="collapsed",
                          format_func=lambda r: "AUTO · router decides" if r == "auto" else f"FORCE · {ROUTES[r][0]}")
     use_rag = st.checkbox("Use my notes and schedule", value=True,
-                          help=f"Searches {len(retriever.chunks)} local chunks in data/student/. Nothing leaves this laptop.")
+                          help=f"Searches {pipeline.n_chunks} local chunks in data/student/. Nothing leaves this laptop.")
     compare = st.checkbox("Also answer with base model")
-    pipeline = st.toggle("Pipeline view", value=True, help="Show every request's path: embed, cache, route, notes, generate.")
+    show_trace = st.toggle("Pipeline view", value=True, help="Show every request's path: embed, cache, route, notes, generate.")
 
     if st.button("CLEAR ROUTER CACHE", width="stretch"):
-        router.clear_cache()
+        pipeline.clear_cache()
         st.rerun()
-    saved = sum(1 for s in st.session_state.sessions if s["turns"])
+    saved = sum(1 for s in store.sessions if s["turns"])
     # Behind a popover so a stray click mid-demo can't wipe the sidebar.
     # Swapping to a plain button once empty also closes the popover after a clear.
     if saved:
@@ -481,64 +446,42 @@ for turn in session["turns"]:
 if prompt:
     render_user(prompt)
     trace = st.empty()
-    if pipeline:
+    if show_trace:
         trace.html(pending_trace_html())
-    rr = router.route(prompt)
-    route = rr.route if force == "auto" else force
-    # Questions about the student's own courses go to the base model with notes, even if the
-    # router picked a specialist on topic words (retriever.notes_route). Never overrides a forced route.
-    answer_route = retriever.notes_route(prompt, route) if use_rag and force == "auto" else route
-    routing = {"route": answer_route, "scores": rr.scores, "margin": rr.margin,
-               "low_confidence": rr.low_confidence, "cache": rr.cache, "latency_ms": rr.latency_ms,
-               "forced": force != "auto", "notes_override": route if answer_route != route else None}
-    render_route(routing, chip=not pipeline)
-    # Route on the raw prompt; the model sees it with any retrieved context added.
-    rag, model_prompt = None, prompt
-    if use_rag:
-        ret = retriever.retrieve(prompt, routing["route"])
-        model_prompt = retriever.augment(prompt, ret)
-        rag = {"sources": ret.sources, "scores": [h.score for h in ret.hits], "profile": ret.profile,
-               "latency_ms": ret.latency_ms}
+    turn = pipeline.route(prompt, Options(force=force, use_rag=use_rag))
+    render_route(turn.routing, chip=not show_trace)
+    pipeline.retrieve(turn)
 
     def live(chunks):
         """Advance the trace on the first token and keep the RAM meter moving."""
         for i, chunk in enumerate(chunks):
-            if i == 0 and pipeline:
-                trace.html(trace_html(routing, rag, None, "streaming"))
+            if i == 0 and show_trace:
+                trace.html(trace_html(turn.routing, turn.rag, None, "streaming"))
             if i % 12 == 0:
                 strip.html(strip_html(session["title"] or prompt[:40]))
             yield chunk
 
-    if pipeline:
-        trace.html(trace_html(routing, rag, None, "waiting"))
+    if show_trace:
+        trace.html(trace_html(turn.routing, turn.rag, None, "waiting"))
     try:
-        answer = st.write_stream(display_stream(live(engine.stream(model_prompt, routing["route"])), routing["route"]))
+        # Saved as displayed (code fences, escaped $), since saved turns are redrawn with st.markdown.
+        turn.answer = st.write_stream(display_stream(live(pipeline.stream(turn)), turn.route))
     except requests.RequestException as e:
         offline(f"The connection dropped while generating ({type(e).__name__}). This turn was not saved.")
         st.stop()
-    render_sources(rag)
-    stats = {**engine.last_stats.__dict__, "app_mem_mb": process_mem_mb(),
-             "switched": st.session_state.last_route not in (None, routing["route"])}
-    if pipeline:
-        trace.html(trace_html(routing, rag, stats))
+    render_sources(turn.rag)
+    if show_trace:
+        trace.html(trace_html(turn.routing, turn.rag, turn.stats))
     strip.html(strip_html(session["title"] or prompt[:40]))
-    render_stats(routing, stats)
-    base_answer = None
-    if compare and routing["route"] != "base":
+    render_stats(turn.routing, turn.stats)
+    if compare and turn.route != "base":
         with st.expander("▸ SAME PROMPT, BASE MODEL ONLY", expanded=True):
             try:
-                base_answer = st.write_stream(display_stream(engine.stream(prompt, "base"), "base"))
+                turn.base_answer = st.write_stream(display_stream(pipeline.stream_base(turn), "base"))
             except requests.RequestException:
-                base_answer = None
+                turn.base_answer = None
 
-    turn = {"ts": time.time(), "prompt": prompt, "routing": routing, "answer": answer,
-            "stats": stats, "base_answer": base_answer, "rag": rag}
     first = not session["turns"]
-    session["turns"].append(turn)
-    session["title"] = session["title"] or (prompt[:40] + ("…" if len(prompt) > 40 else ""))
-    st.session_state.last_route = routing["route"]
-    save_sessions()
-    with TURNS_LOG.open("a") as f:
-        f.write(json.dumps({**turn, "session": session["id"]}) + "\n")
+    store.add_turn(session, turn)
     if first:
         st.rerun()  # the sidebar was drawn before this session had a title
