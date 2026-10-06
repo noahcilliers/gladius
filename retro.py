@@ -48,6 +48,14 @@ WORDMARK = """\
 ╚██████╔╝███████╗██║  ██║██████╔╝██║╚██████╔╝███████║
  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝ ╚═════╝ ╚══════╝"""
 
+# Browser-tab icon: the same sword as the landing page's favicon (site/index.html).
+FAVICON = (
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+    "<rect width='32' height='32' rx='6' fill='#090604'/><g fill='#ff8a1f'>"
+    "<path d='M16 2.5l3 4V19h-6V6.5z'/><rect x='9' y='19' width='14' height='2.6' rx='1.3'/>"
+    "<rect x='14.6' y='21.6' width='2.8' height='5'/><circle cx='16' cy='28.2' r='2'/></g></svg>"
+)
+
 # Local fonts only: the demo runs with Wi-Fi off, so nothing is fetched from a CDN.
 CSS = """
 <style>
@@ -198,7 +206,7 @@ header[data-testid="stHeader"]{background:transparent!important}
 </style>
 """
 
-st.set_page_config(page_title=APP_NAME, page_icon="🗡️", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title=APP_NAME, page_icon=FAVICON, layout="centered", initial_sidebar_state="expanded")
 st.html(CSS)
 
 
