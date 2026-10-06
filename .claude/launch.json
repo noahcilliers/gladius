@@ -27,6 +27,12 @@
         "monospace"
       ],
       "port": 8503
+    },
+    {
+      "name": "gladius-site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4173", "--directory", "site"],
+      "port": 4173
     }
   ]
 }

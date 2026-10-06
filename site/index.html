@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gladius</title>
+<meta name="description" content="Local AI for students. One small model plus tiny LoRA specialists, running offline on the laptop you already own. Open source.">
+<meta name="theme-color" content="#090604">
+<meta property="og:title" content="Gladius">
+<meta property="og:description" content="Local AI for students. One model, tiny LoRA specialists, zero cloud.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23090604'/%3E%3Cg fill='%23ff8a1f'%3E%3Cpath d='M16 2.5l3 4V19h-6V6.5z'/%3E%3Crect x='9' y='19' width='14' height='2.6' rx='1.3'/%3E%3Crect x='14.6' y='21.6' width='2.8' height='5'/%3E%3Ccircle cx='16' cy='28.2' r='2'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+:root{--bg:#090604;--text:#f6e6d3;--dim:#a07f5f;--line:#3d2610;--acc:#ff8a1f;
+  --mono:ui-monospace,"SF Mono",Menlo,Monaco,Consolas,"DejaVu Sans Mono",monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{min-height:100vh;padding:0 16px;font:14px/1.75 var(--mono);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--acc);color:var(--bg)}
+a{color:var(--acc);text-decoration:none}
+a:hover,a:focus-visible{text-shadow:0 0 10px rgba(255,138,31,.6)}
+:focus-visible{outline:1px dashed var(--acc);outline-offset:3px}
+@keyframes blink{50%{opacity:0}}
+
+/* hero: the sword is the image */
+.hero{min-height:58vh;min-height:58svh;display:grid;place-items:center;padding:clamp(56px,12vh,128px) 0 clamp(40px,8vh,88px)}
+.sword{margin:0;font-family:var(--mono);line-height:1.04;white-space:pre;
+  font-size:clamp(3.5px,calc((100vw - 32px) / 61.6),13px);
+  background:linear-gradient(105deg,transparent 42%,rgba(255,246,232,.95) 50%,transparent 58%) -150% 0/250% 100% no-repeat,
+             linear-gradient(180deg,#ffe2bd 0%,#ff8a1f 48%,#d95300 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:draw 1.1s cubic-bezier(.2,.7,.2,1) .15s both,glint 1.6s ease-in-out 1.4s,glint 1.6s ease-in-out 9s infinite}
+/* the glow lives on the wrapper so the reveal's clip-path doesn't crop it */
+.glow{filter:drop-shadow(0 0 14px rgba(255,138,31,.45))}
+@media (max-width:640px){.hero{min-height:0;padding:clamp(56px,14vh,120px) 0 clamp(48px,9vh,80px)}}
+@keyframes draw{from{clip-path:inset(0 100% 0 0);transform:translateX(-3%)}to{clip-path:inset(0 0 0 0);transform:none}}
+@keyframes glint{from{background-position:-150% 0,0 0}to{background-position:250% 0,0 0}}
+
+main{width:100%;max-width:36rem;margin:0 auto;padding-bottom:clamp(56px,10vh,112px)}
+h1{margin:0 0 1.75rem;font-size:15px;font-weight:700;letter-spacing:.42em;color:var(--acc);text-shadow:0 0 12px rgba(255,138,31,.55)}
+h1 span{display:inline-block;width:.6em;height:1.05em;margin-left:-.2em;vertical-align:-.18em;background:var(--acc);
+  box-shadow:0 0 10px rgba(255,138,31,.6);animation:blink 1.1s steps(1) infinite}
+p{margin:0 0 1.75rem}
+.dim{color:var(--dim)}
+.hl{color:var(--acc)}
+
+.lbl{margin:2.6rem 0 .8rem;font-size:11px;letter-spacing:.3em;color:var(--dim)}
+.spec{display:grid;grid-template-columns:max-content 1fr;gap:.35rem 0;margin:0 0 2.6rem}
+.spec .row{display:contents}
+.spec dt{margin:0;padding-right:1.6rem;white-space:nowrap}
+.spec dd{margin:0;color:var(--dim)}
+.spec .g{display:inline-block;width:1.4em;color:var(--acc)}
+.spec .you dt,.spec .you dd{padding-top:.55rem;margin-top:.2rem;border-top:1px dashed var(--line)}
+.spec .you dt{color:var(--acc)}
+.spec .you dd{color:var(--text)}
+.soon{display:inline-block;margin-left:.6em;padding:0 .4em;border:1px solid var(--line);border-radius:3px;font-size:10px;letter-spacing:.16em;
+  line-height:1.6;color:var(--dim);vertical-align:.1em}
+@media (max-width:480px){.spec{grid-template-columns:1fr;gap:0}.spec dd{margin-bottom:.6rem}
+  .spec .you dd{border-top:0;padding-top:0;margin-top:0}}
+
+.cmd{display:flex;align-items:center;gap:1rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:.7rem 0}
+.cmd code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;font:inherit;scrollbar-width:none}
+.cmd code::-webkit-scrollbar{display:none}
+.cmd code::before{content:"$ ";color:var(--dim)}
+button{font:inherit;font-size:12px;letter-spacing:.14em;color:var(--dim);background:none;border:0;padding:.2rem 0;cursor:pointer}
+button:hover,button:focus-visible{color:var(--acc)}
+footer{margin-top:3rem;font-size:12px;color:var(--dim)}
+
+@media (prefers-reduced-motion:reduce){.sword,h1 span{animation:none}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="glow">
+<pre class="sword" aria-hidden="true">                                   ▄▄▄▄
+                                  ▄████▄
+   ▄▓▓▓▓█▄                        ██████▄▄
+ ▄█▓▓▓▓▓███▄                      ██▓▓████████████████▄▄▄▄▄▄▄▄▄▄█████████████████▄▄▄
+▄██▓▓▓▓▓████▄  ▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒██▓▓█████████████████████████████████████████████████▄▄▄
+███████████████▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒██▓▓████████████████████████████████████████████████████████▄▄▄▄
+███████████████▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒██▓▓██████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒████████████████
+███████████████▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒██▓▓████████████████████████████████████████████████████████▀▀▀▀
+▀███████████▀  ▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒▓▓▒██▓▓█████████████████████████████████████████████████▀▀▀
+ ▀█████████▀                      ██▓▓████████████████▀▀▀▀▀▀▀▀▀▀█████████████████▀▀▀
+   ▀█████▀                        ██████▀▀
+                                  ▀████▀
+                                   ▀▀▀▀</pre>
+</div></header>
+<main>
+  <h1>GLADIUS<span aria-hidden="true"></span></h1>
+  <p>Local AI for students.<br>
+  <span class="dim">Runs on the laptop you already own. Offline, private, no API bills.</span></p>
+  <p>One small base model, plus tiny <span class="hl">LoRA specialists</span>. For every prompt, a router picks the right specialist and switches it on in under 50&nbsp;ms, without reloading anything.</p>
+
+  <p class="lbl">SPECIALISTS</p>
+  <dl class="spec">
+    <div class="row"><dt><span class="g">∑</span>math</dt><dd>word problems, step by step</dd></div>
+    <div class="row"><dt><span class="g">λ</span>python</dt><dd>clean, code-only functions</dd></div>
+    <div class="row"><dt><span class="g">¶</span>tech writer</dt><dd>docs for your own code</dd></div>
+    <div class="row"><dt><span class="g">✦</span>creative</dt><dd>essays, riffs and ideas</dd></div>
+    <div class="row you"><dt><span class="g">+</span>yours</dt><dd>import any Llama 3.2 3B LoRA<span class="soon">SOON</span></dd></div>
+  </dl>
+
+  <p class="cmd"><code id="clone">git clone https://github.com/noahcilliers/gladius.git</code><button type="button" id="copy">COPY</button></p>
+  <p><a href="https://github.com/noahcilliers/gladius">github.com/noahcilliers/gladius ↗</a></p>
+  <footer>macOS · Linux · 8 GB RAM · offline · MIT</footer>
+</main>
+<script>
+const copyText = async t => {
+  try { await navigator.clipboard.writeText(t); return true } catch {}
+  const a = Object.assign(document.createElement('textarea'), { value: t });
+  a.style.cssText = 'position:fixed;opacity:0'; document.body.append(a); a.select();
+  let ok = false; try { ok = document.execCommand('copy') } catch {}
+  a.remove(); return ok;
+};
+document.getElementById('copy').addEventListener('click', async e => {
+  const b = e.currentTarget, code = document.getElementById('clone');
+  const ok = await copyText(code.textContent);
+  if (!ok) getSelection().selectAllChildren(code);
+  b.textContent = ok ? 'COPIED' : 'SELECTED'; setTimeout(() => b.textContent = 'COPY', 1400);
+});
+</script>
+</body>
+</html>
