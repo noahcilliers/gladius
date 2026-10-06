@@ -4,6 +4,7 @@ streamlit>=1.40
 numpy>=2.2
 psutil>=6.0
 requests>=2.31
+python-dotenv>=1.0
 matplotlib>=3.9
 huggingface_hub>=0.34
 safetensors>=0.4

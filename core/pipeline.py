@@ -11,7 +11,7 @@ from collections.abc import Iterator
 
 from core.types import Options, Turn
 from engine import Engine, process_mem_mb
-from retriever import Retriever
+from rag import Retriever
 from router import Router
 
 
@@ -75,3 +75,8 @@ class Pipeline:
     @property
     def n_chunks(self) -> int:
         return len(self.retriever.chunks)
+
+    @property
+    def workspace(self) -> str:
+        """The notes folder being searched (GLADIUS_WORKSPACE)."""
+        return str(self.retriever.root)

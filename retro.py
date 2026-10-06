@@ -400,7 +400,7 @@ with st.sidebar:
     force = st.selectbox("Specialist", ["auto"] + list(ROUTES), label_visibility="collapsed",
                          format_func=lambda r: "AUTO · router decides" if r == "auto" else f"FORCE · {ROUTES[r][0]}")
     use_rag = st.checkbox("Use my notes and schedule", value=True,
-                          help=f"Searches {pipeline.n_chunks} local chunks in data/student/. Nothing leaves this laptop.")
+                          help=f"Searches {pipeline.n_chunks} local chunks in {pipeline.workspace}. Nothing leaves this laptop.")
     compare = st.checkbox("Also answer with base model")
     show_trace = st.toggle("Pipeline view", value=True, help="Show every request's path: embed, cache, route, notes, generate.")
 

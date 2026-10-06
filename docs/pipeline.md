@@ -64,7 +64,7 @@ One prompt, start to finish. Everything runs locally on the laptop.
 | 2 | Embed | prompt text | 384-dim vector | `router.py` (Arctic Embed) |
 | 3 | Cache lookup | vector | cached route, or miss | `router.py` (in memory) |
 | 4 | Route | vector | route name + scores | `router.py` (centroids) |
-| 4b | Retrieve | vector + route name | 0–k chunks + scores | `retriever.py` (numpy, in memory) |
+| 4b | Retrieve | vector + route name | 0–k chunks + scores | `rag/retriever.py` (numpy, in memory) |
 | 5 | Activate adapter | route name | active LoRA set | runtime (llama.cpp / PEFT) |
 | 6 | Generate | **context block + original prompt text** | answer text | base model + adapter |
 | 7 | Display | answer + metadata | UI update | local web page |
@@ -148,7 +148,7 @@ If the context doesn't answer the question, say so instead of guessing.
 
 The UI lists the `[file · heading]` tags under the answer as "sources used".
 
-### Tuning knobs (in `retriever.py`)
+### Tuning knobs (in `rag/retriever.py`)
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -158,7 +158,7 @@ The UI lists the `[file · heading]` tags under the answer as "sources used".
 | `UPCOMING_DAYS` | 10 | Calendar window added to the profile on `base` |
 | `ROUTE_RAG` | table above | Per-route profile / collections / top-k |
 
-Calibrated on `data/rag_eval.json` (21 prompts incl. 4 negative controls): `python retriever.py` prints per-prompt hits and scores. Current: 90% hit rate, 82% mean recall, 0/4 false injections.
+Calibrated on `data/rag_eval.json` (21 prompts incl. 4 negative controls): `python -m rag.retriever` prints per-prompt hits and scores. Current: 90% hit rate, 82% mean recall, 0/4 false injections.
 
 ### Budget impact
 
