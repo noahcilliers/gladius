@@ -1,0 +1,111 @@
+{
+  "_note": "Heading rewrites for the sparse corpus: the same sections, titled the way a student would title them for themselves (short, no course code, no keyword stuffing). build_corpora.py fails if a heading in corpora/detailed has no entry here.",
+  "profile.md": {
+    "# Student Profile": "# Me",
+    "## Student profile — Jordan Reyes": "## About me"
+  },
+  "courses/calendar.md": {
+    "# Fall 2026 Calendar — all courses": "# Calendar",
+    "## All courses — Deadlines, exams and review sessions in October 2026": "## October",
+    "## All courses — Deadlines and exams in November and December 2026": "## Nov / Dec"
+  },
+  "courses/cs301.md": {
+    "# CS 301 Database Systems": "# CS 301",
+    "## CS 301 — Course overview and instructor": "## Overview",
+    "## CS 301 — Grading breakdown": "## Grading",
+    "## CS 301 — Assignment deadlines": "## Deadlines",
+    "## CS 301 — Exam dates": "## Exams",
+    "## CS 301 — Late policy, late days and how to ask for an extension": "## Late policy",
+    "## CS 301 — Course project description": "## Project"
+  },
+  "courses/math221.md": {
+    "# MATH 221 Linear Algebra": "# MATH 221",
+    "## MATH 221 — Course overview and instructor": "## Overview",
+    "## MATH 221 — Grading breakdown": "## Grading",
+    "## MATH 221 — Problem set and exam dates": "## Dates",
+    "## MATH 221 — Notation conventions used in class": "## Notation",
+    "## MATH 221 — Topics this month": "## This month"
+  },
+  "courses/phil150.md": {
+    "# PHIL 150 Philosophy of Technology": "# PHIL 150",
+    "## PHIL 150 — Course overview and instructor": "## Overview",
+    "## PHIL 150 — Grading breakdown": "## Grading",
+    "## PHIL 150 — Essay 1 prompt and requirements": "## Essay 1",
+    "## PHIL 150 — Essay 2 prompt": "## Essay 2",
+    "## PHIL 150 — Reading schedule for October": "## Readings"
+  },
+  "notes/cs301_notes.md": {
+    "# CS 301 Database Systems — Jordan's lecture notes": "# CS 301 notes",
+    "## CS 301 notes — Relational model and keys (lectures Aug 24–28)": "## Keys",
+    "## CS 301 notes — ER diagrams and cardinality (lectures Aug 31–Sep 4)": "## ER diagrams",
+    "## CS 301 notes — Functional dependencies and normalization to 3NF (lectures Sep 9–11)": "## Normalization",
+    "## CS 301 notes — SQL evaluation order and NULLs (lecture Sep 14)": "## NULLs",
+    "## CS 301 notes — Joins: inner, left, outer, self (lectures Sep 16–18)": "## Joins",
+    "## CS 301 notes — Subqueries, IN vs EXISTS, and HW3 hints (lectures Sep 21–25)": "## Subqueries",
+    "## CS 301 notes — GROUP BY, HAVING vs WHERE (lectures Sep 28–30)": "## GROUP BY",
+    "## CS 301 notes — Indexes and B+ trees intro (lecture Oct 2)": "## Indexes",
+    "## CS 301 notes — Midterm review tips from Prof. Chen": "## Midterm review"
+  },
+  "notes/cs301_project_code.md": {
+    "# CS 301 project — Jordan's code notes": "# Project code",
+    "## CS 301 project code — late_penalty() function in grading.py": "## late_penalty"
+  },
+  "notes/math221_notes.md": {
+    "# MATH 221 Linear Algebra — Jordan's lecture notes": "# MATH 221 notes",
+    "## MATH 221 notes — Systems of equations and elimination (lectures Aug 25–27)": "## Elimination",
+    "## MATH 221 notes — Reduced row echelon form, pivots and free variables (lectures Sep 1–3)": "## rref",
+    "## MATH 221 notes — Matrix multiplication and inverses (lectures Sep 8–10)": "## Inverses",
+    "## MATH 221 notes — Vector spaces and the subspace test (lectures Sep 15–17)": "## Subspaces",
+    "## MATH 221 notes — Column space and null space (lectures Sep 22–24)": "## C(A) and N(A)",
+    "## MATH 221 notes — Rank, complete solution and rank–nullity (lectures Sep 29–Oct 1)": "## Rank",
+    "## MATH 221 notes — Linear independence, basis and dimension (lecture Oct 1, continues week of Oct 5)": "## Independence",
+    "## MATH 221 notes — Midterm 1 format and tips from Prof. Okafor": "## Midterm 1"
+  },
+  "notes/phil150_notes.md": {
+    "# PHIL 150 Philosophy of Technology — Jordan's seminar notes": "# PHIL 150 notes",
+    "## PHIL 150 notes — Instrumental vs substantive views of technology (seminar Aug 25–27)": "## Intro",
+    "## PHIL 150 notes — Plato's Phaedrus and writing as pharmakon (seminar Sep 1–3)": "## Plato",
+    "## PHIL 150 notes — Aristotle's techne and the four causes (seminar Sep 8–10)": "## Aristotle",
+    "## PHIL 150 notes — Heidegger part 1: revealing, poiesis and challenging-forth (seminar Sep 29)": "## Heidegger 1",
+    "## PHIL 150 notes — Heidegger part 2: Gestell (enframing) and standing-reserve (seminar Oct 1)": "## Heidegger 2",
+    "## PHIL 150 notes — Essay 1 tips from Dr. Lindqvist": "## Essay tips",
+    "## PHIL 150 notes — Reading responses: what Dr. Lindqvist wants": "## Responses"
+  },
+  "schemas/cs301_db.md": {
+    "# CS 301 Class Database Schemas": "# Schemas",
+    "## CS 301 — University class database schema (used in homework and labs)": "## Class DB",
+    "## CS 301 — Bike-share project database schema (Jordan's team project)": "## Project DB"
+  },
+  "syllabi/cs301_syllabus.md": {
+    "# CS 301 Database Systems — Syllabus, Fall 2026": "# CS 301 syllabus",
+    "## CS 301 Database Systems syllabus — Course description, prerequisites and learning objectives": "## Description",
+    "## CS 301 Database Systems syllabus — Required materials and software": "## Materials",
+    "## CS 301 Database Systems syllabus — Lecture topics by week before the midterm, weeks 1–8 (Aug 24 – Oct 16)": "## Weeks 1–8",
+    "## CS 301 Database Systems syllabus — Lecture topics by week after the midterm, weeks 9–16 (Oct 19 – Dec 10)": "## Weeks 9–16",
+    "## CS 301 Database Systems syllabus — Letter grade cutoffs (percent needed for an A, B, C) and regrade requests": "## Grades",
+    "## CS 301 Database Systems syllabus — Attendance and labs": "## Attendance",
+    "## CS 301 Database Systems syllabus — Collaboration and AI tool policy": "## Collaboration",
+    "## CS 301 Database Systems syllabus — Communication, accommodations and missed exams": "## Communication"
+  },
+  "syllabi/math221_syllabus.md": {
+    "# MATH 221 Linear Algebra — Syllabus, Fall 2026": "# MATH 221 syllabus",
+    "## MATH 221 Linear Algebra syllabus — Course description, prerequisites and learning objectives": "## Description",
+    "## MATH 221 Linear Algebra syllabus — Textbook and materials": "## Materials",
+    "## MATH 221 Linear Algebra syllabus — Lecture topics by week up to Midterm 1, weeks 1–8 (Aug 25 – Oct 15)": "## Weeks 1–8",
+    "## MATH 221 Linear Algebra syllabus — Lecture topics by week after Midterm 1, weeks 9–16 (Oct 20 – Dec 8)": "## Weeks 9–16",
+    "## MATH 221 Linear Algebra syllabus — Letter grade cutoffs and the final-exam replacement rule": "## Grades",
+    "## MATH 221 Linear Algebra syllabus — Problem sets, quizzes and collaboration": "## Homework",
+    "## MATH 221 Linear Algebra syllabus — AI tool policy and academic integrity": "## Integrity",
+    "## MATH 221 Linear Algebra syllabus — Missed exams, regrades and accommodations": "## Exams"
+  },
+  "syllabi/phil150_syllabus.md": {
+    "# PHIL 150 Philosophy of Technology — Syllabus, Fall 2026": "# PHIL 150 syllabus",
+    "## PHIL 150 Philosophy of Technology syllabus — Course description and learning objectives": "## Description",
+    "## PHIL 150 Philosophy of Technology syllabus — Reading schedule, weeks 1–8 (Aug 25 – Oct 15)": "## Readings 1–8",
+    "## PHIL 150 Philosophy of Technology syllabus — Reading schedule, weeks 9–15 (Oct 19 – Dec 9)": "## Readings 9–15",
+    "## PHIL 150 Philosophy of Technology syllabus — Letter grade cutoffs and essay grading criteria": "## Grades",
+    "## PHIL 150 Philosophy of Technology syllabus — Attendance policy (how many absences are allowed), participation and late essays": "## Attendance",
+    "## PHIL 150 Philosophy of Technology syllabus — AI tool policy and academic integrity": "## Integrity",
+    "## PHIL 150 Philosophy of Technology syllabus — Citation style, Writing Center and accommodations": "## Citations"
+  }
+}

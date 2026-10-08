@@ -1,0 +1,483 @@
+{
+ "_note": "RAG eval cases, run against each corpus in corpora/. `set`: original = the 34 prompts of data/rag_eval.json (the current retriever's thresholds were hand-fit to these), heldout = written for this eval and never used for tuning. `gold`: the passages the model needs, each identified by `needles`, short verbatim snippets of the section body (any one present in what the model sees = passage delivered). Bodies are identical in every corpus, so the needles hold whatever the headings or chunker. `section` and `file` are for humans only. An empty `gold` is a negative control: no notes should be injected. `facts`: regexes a correct answer must all match (case-insensitive, after normalize() in run.py). `route` is the route the prompt is meant for (informational; not scored). Do not edit after a baseline run: compare.py refuses runs whose cases hash differs.",
+ "cases": [
+  {
+   "id": "cs301-extension-email",
+   "set": "original",
+   "route": "base",
+   "prompt": "Write an email to my databases professor asking for an extension on HW3.",
+   "gold": [
+    {"section": "CS 301 — Late policy, late days and how to ask for an extension", "file": "courses/cs301.md", "needles": ["at least 48 hours before the deadline"]},
+    {"section": "CS 301 — Assignment deadlines", "file": "courses/cs301.md", "needles": ["er diagram + schema proposal"]}
+   ],
+   "facts": ["chen", "\\bhw ?3\\b|homework 3"]
+  },
+  {
+   "id": "math221-midterm-when-what",
+   "set": "original",
+   "route": "base",
+   "prompt": "When is my linear algebra midterm and what does it cover?",
+   "gold": [
+    {"section": "MATH 221 — Problem set and exam dates", "file": "courses/math221.md", "needles": ["matrix operations, vector spaces, subspaces"]},
+    {"section": "MATH 221 notes — Midterm 1 format and tips from Prof. Okafor", "file": "notes/math221_notes.md", "needles": ["it will have five problems"]},
+    {"section": "MATH 221 Linear Algebra syllabus — Lecture topics by week up to Midterm 1, weeks 1–8", "file": "syllabi/math221_syllabus.md", "needles": ["review session sun oct 11; midterm 1 tue oct 13"]}
+   ],
+   "facts": ["oct(ober)?\\.? 13|10/13", "subspace|vector space|chapters? 1|ch\\. ?1|row echelon|rref|null space"]
+  },
+  {
+   "id": "study-plan-next-week",
+   "set": "original",
+   "route": "base",
+   "prompt": "Make me a study plan for next week.",
+   "gold": [
+    {"section": "All courses — Deadlines, exams and review sessions in October 2026", "file": "courses/calendar.md", "needles": ["math 221 midterm 1 review session"]},
+    {"section": "MATH 221 — Problem set and exam dates", "file": "courses/math221.md", "needles": ["matrix operations, vector spaces, subspaces"]},
+    {"section": "CS 301 — Assignment deadlines", "file": "courses/cs301.md", "needles": ["er diagram + schema proposal"]},
+    {"section": "PHIL 150 — Essay 1 prompt and requirements", "file": "courses/phil150.md", "needles": ["at least three direct citations from the heidegger text"]},
+    {"section": "MATH 221 notes — Midterm 1 format and tips from Prof. Okafor", "file": "notes/math221_notes.md", "needles": ["it will have five problems"]}
+   ],
+   "facts": ["midterm", "\\bhw ?3\\b|homework 3", "problem set 5|\\bps ?5\\b|pset 5"]
+  },
+  {
+   "id": "due-before-end-of-october",
+   "set": "original",
+   "route": "base",
+   "prompt": "What's due before the end of October?",
+   "gold": [
+    {"section": "All courses — Deadlines, exams and review sessions in October 2026", "file": "courses/calendar.md", "needles": ["cs 301 hw4 due"]},
+    {"section": "CS 301 — Assignment deadlines", "file": "courses/cs301.md", "needles": ["er diagram + schema proposal"]},
+    {"section": "MATH 221 — Problem set and exam dates", "file": "courses/math221.md", "needles": ["matrix operations, vector spaces, subspaces"]},
+    {"section": "PHIL 150 — Essay 1 prompt and requirements", "file": "courses/phil150.md", "needles": ["at least three direct citations from the heidegger text"]}
+   ],
+   "facts": ["\\bhw ?3\\b|homework 3", "\\bhw ?4\\b|homework 4", "essay", "problem set|\\bps ?[56]\\b|pset"]
+  },
+  {
+   "id": "okafor-office-hours",
+   "set": "original",
+   "route": "base",
+   "prompt": "When are Prof. Okafor's office hours?",
+   "gold": [
+    {"section": "MATH 221 — Course overview and instructor", "file": "courses/math221.md", "needles": ["office hours mondays and wednesdays 13:00"]}
+   ],
+   "facts": ["\\bmon", "\\bwed", "13:00|\\b1(:00)? ?p\\.?m"]
+  },
+  {
+   "id": "chen-midterm-content",
+   "set": "original",
+   "route": "base",
+   "prompt": "What did Prof. Chen say would be on the databases midterm?",
+   "gold": [
+    {"section": "CS 301 notes — Midterm review tips from Prof. Chen", "file": "notes/cs301_notes.md", "needles": ["there are four question types"]},
+    {"section": "CS 301 — Exam dates", "file": "courses/cs301.md", "needles": ["covers the relational model, sql (joins"]}
+   ],
+   "facts": ["er diagram|entity.relationship", "normaliz|3nf", "join|subquer|group by|having|quer"]
+  },
+  {
+   "id": "where-vs-having",
+   "set": "original",
+   "route": "base",
+   "prompt": "From my lecture notes, what's the difference between WHERE and HAVING?",
+   "gold": [
+    {"section": "CS 301 notes — GROUP BY, HAVING vs WHERE (lectures Sep 28–30)", "file": "notes/cs301_notes.md", "needles": ["having filters groups after aggregation"]}
+   ],
+   "facts": ["having", "group", "aggregat|count|avg|sum"]
+  },
+  {
+   "id": "left-join-acts-inner",
+   "set": "original",
+   "route": "base",
+   "prompt": "Why does my LEFT JOIN keep acting like an inner join on HW3?",
+   "gold": [
+    {"section": "CS 301 notes — Joins: inner, left, outer, self (lectures Sep 16–18)", "file": "notes/cs301_notes.md", "needles": ["silently turns a left join into an inner join"]}
+   ],
+   "facts": ["\\bon\\b clause|\\bon\\b condition|(in|into|to) the \\bon\\b|join condition", "where"]
+  },
+  {
+   "id": "hw3-q4-hints",
+   "set": "original",
+   "route": "base",
+   "prompt": "What hints did the professor give for HW3 question 4?",
+   "gold": [
+    {"section": "CS 301 notes — Subqueries, IN vs EXISTS, and HW3 hints (lectures Sep 21–25)", "file": "notes/cs301_notes.md", "needles": ["needs a correlated subquery"]}
+   ],
+   "facts": ["correlated"]
+  },
+  {
+   "id": "3nf-like-in-class",
+   "set": "original",
+   "route": "base",
+   "prompt": "Explain 3NF the way we covered it in class, I need it for project milestone 1.",
+   "gold": [
+    {"section": "CS 301 notes — Functional dependencies and normalization to 3NF (lectures Sep 9–11)", "file": "notes/cs301_notes.md", "needles": ["the whole key, and nothing but the key"]}
+   ],
+   "facts": ["transitive", "whole key|nothing but the key"]
+  },
+  {
+   "id": "null-space-basis",
+   "set": "original",
+   "route": "base",
+   "prompt": "Using my notes, how do I find a basis for the null space of a matrix?",
+   "gold": [
+    {"section": "MATH 221 notes — Column space and null space (lectures Sep 22–24)", "file": "notes/math221_notes.md", "needles": ["these special solutions are a basis for n(a)"]}
+   ],
+   "facts": ["free variable", "special solution", "rref|reduced row echelon|row.?reduc"]
+  },
+  {
+   "id": "quiz-subspace-test",
+   "set": "original",
+   "route": "base",
+   "prompt": "Quiz me on the subspace test from linear algebra.",
+   "gold": [
+    {"section": "MATH 221 notes — Vector spaces and the subspace test (lectures Sep 15–17)", "file": "notes/math221_notes.md", "needles": ["always check zero first"]}
+   ],
+   "facts": ["zero", "addition", "scalar"]
+  },
+  {
+   "id": "heidegger-standing-reserve",
+   "set": "original",
+   "route": "base",
+   "prompt": "What does Heidegger mean by standing-reserve?",
+   "gold": [
+    {"section": "PHIL 150 notes — Heidegger part 2: Gestell (enframing) and standing-reserve (seminar Oct 1)", "file": "notes/phil150_notes.md", "needles": ["things show up only as resources on call"]}
+   ],
+   "facts": ["resource", "bestand|enframing|gestell"]
+  },
+  {
+   "id": "lindqvist-good-thesis",
+   "set": "original",
+   "route": "base",
+   "prompt": "What did Dr. Lindqvist say makes a good thesis for the Heidegger essay?",
+   "gold": [
+    {"section": "PHIL 150 notes — Essay 1 tips from Dr. Lindqvist", "file": "notes/phil150_notes.md", "needles": ["thesis must make a claim, not summarize heidegger"]},
+    {"section": "PHIL 150 — Essay 1 prompt and requirements", "file": "courses/phil150.md", "needles": ["at least three direct citations from the heidegger text"]}
+   ],
+   "facts": ["claim|arguable", "summar"]
+  },
+  {
+   "id": "outline-heidegger-essay",
+   "set": "original",
+   "route": "creative",
+   "prompt": "Help me outline my Heidegger essay.",
+   "gold": [
+    {"section": "PHIL 150 — Essay 1 prompt and requirements", "file": "courses/phil150.md", "needles": ["at least three direct citations from the heidegger text"]},
+    {"section": "PHIL 150 notes — Essay 1 tips from Dr. Lindqvist", "file": "notes/phil150_notes.md", "needles": ["thesis must make a claim, not summarize heidegger"]}
+   ],
+   "facts": ["gestell|enframing", "counter", "thesis"]
+  },
+  {
+   "id": "sql-enrollment-counts",
+   "set": "original",
+   "route": "sql",
+   "prompt": "Count how many students are enrolled in each course this semester.",
+   "gold": [
+    {"section": "CS 301 — University class database schema (used in homework and labs)", "file": "schemas/cs301_db.md", "needles": ["create table enrollments"]}
+   ],
+   "facts": ["count\\s*\\(", "group by", "enrollments"]
+  },
+  {
+   "id": "sql-bike-station-rides",
+   "set": "original",
+   "route": "sql",
+   "prompt": "Which bike stations have the most rides starting from them?",
+   "gold": [
+    {"section": "CS 301 — Bike-share project database schema (Jordan's team project)", "file": "schemas/cs301_db.md", "needles": ["create table rides"]}
+   ],
+   "facts": ["count\\s*\\(", "group by", "start_station_id"]
+  },
+  {
+   "id": "chatgpt-databases-homework",
+   "set": "original",
+   "route": "base",
+   "prompt": "Am I allowed to use ChatGPT on my databases homework?",
+   "gold": [
+    {"section": "CS 301 Database Systems syllabus — Collaboration and AI tool policy", "file": "syllabi/cs301_syllabus.md", "needles": ["not allowed for generating homework answers"]}
+   ],
+   "facts": ["concept|debug|error message", "not allowed|not permitted|prohibited|cannot|can't|isn't allowed|aren't allowed"]
+  },
+  {
+   "id": "ai-philosophy-essay",
+   "set": "original",
+   "route": "base",
+   "prompt": "Can I use AI to help with my philosophy essay?",
+   "gold": [
+    {"section": "PHIL 150 Philosophy of Technology syllabus — AI tool policy and academic integrity", "file": "syllabi/phil150_syllabus.md", "needles": ["ai-generated prose is not allowed"]}
+   ],
+   "facts": ["brainstorm", "disclos|footnote"]
+  },
+  {
+   "id": "final-replaces-midterm",
+   "set": "original",
+   "route": "base",
+   "prompt": "If I bomb a linear algebra midterm, can the final replace it?",
+   "gold": [
+    {"section": "MATH 221 Linear Algebra syllabus — Letter grade cutoffs and the final-exam replacement rule", "file": "syllabi/math221_syllabus.md", "needles": ["it replaces that midterm score"]}
+   ],
+   "facts": ["replac", "higher"]
+  },
+  {
+   "id": "a-minus-databases",
+   "set": "original",
+   "route": "base",
+   "prompt": "What percentage do I need for an A- in Database Systems?",
+   "gold": [
+    {"section": "CS 301 Database Systems syllabus — Letter grade cutoffs (percent needed for an A, B, C) and regrade requests", "file": "syllabi/cs301_syllabus.md", "needles": ["prof. chen may lower cutoffs but never raises them"]}
+   ],
+   "facts": ["\\b90\\b"]
+  },
+  {
+   "id": "reading-after-winner",
+   "set": "original",
+   "route": "base",
+   "prompt": "What are we reading in philosophy after Winner?",
+   "gold": [
+    {"section": "PHIL 150 Philosophy of Technology syllabus — Reading schedule, weeks 9–15 (Oct 19 – Dec 9)", "file": "syllabi/phil150_syllabus.md", "needles": ["essay 2 must use one of these besides de beauvoir"]}
+   ],
+   "facts": ["beauvoir"]
+  },
+  {
+   "id": "cs301-after-midterm",
+   "set": "original",
+   "route": "base",
+   "prompt": "What topics come after the midterm in CS 301?",
+   "gold": [
+    {"section": "CS 301 Database Systems syllabus — Lecture topics by week after the midterm, weeks 9–16 (Oct 19 – Dec 10)", "file": "syllabi/cs301_syllabus.md", "needles": ["window functions and ctes"]}
+   ],
+   "facts": ["window function", "index|b\\+ ?tree|transaction|acid|nosql"]
+  },
+  {
+   "id": "phil-absences",
+   "set": "original",
+   "route": "base",
+   "prompt": "How many classes can I skip in my philosophy seminar?",
+   "gold": [
+    {"section": "PHIL 150 Philosophy of Technology syllabus — Attendance policy (how many absences are allowed), participation and late essays", "file": "syllabi/phil150_syllabus.md", "needles": ["up to 3 absences need no explanation"]}
+   ],
+   "facts": ["\\b3\\b|three"]
+  },
+  {
+   "id": "missed-lab",
+   "set": "original",
+   "route": "base",
+   "prompt": "I missed a lab this week, can I make it up?",
+   "gold": [
+    {"section": "CS 301 Database Systems syllabus — Attendance and labs", "file": "syllabi/cs301_syllabus.md", "needles": ["a missed lab can be made up within one week"]}
+   ],
+   "facts": ["one week|1 week|a week|7 days", "webb|\\bta\\b|teaching assistant"]
+  },
+  {
+   "id": "linear-algebra-textbook",
+   "set": "original",
+   "route": "base",
+   "prompt": "What textbook do we use for linear algebra?",
+   "gold": [
+    {"section": "MATH 221 Linear Algebra syllabus — Textbook and materials", "file": "syllabi/math221_syllabus.md", "needles": ["required textbook: gilbert strang"]},
+    {"section": "MATH 221 — Course overview and instructor", "file": "courses/math221.md", "needles": ["textbook: strang, introduction to linear algebra"]}
+   ],
+   "facts": ["strang"]
+  },
+  {
+   "id": "linear-algebra-regrade",
+   "set": "original",
+   "route": "base",
+   "prompt": "How do I request a regrade on my linear algebra exam?",
+   "gold": [
+    {"section": "MATH 221 Linear Algebra syllabus — Missed exams, regrades and accommodations", "file": "syllabi/math221_syllabus.md", "needles": ["regrade requests: in writing within one week"]}
+   ],
+   "facts": ["in writing|written", "one week|1 week|a week|7 days"]
+  },
+  {"id": "neg-small-talk", "set": "original", "route": "base", "prompt": "hey whats up", "gold": [], "facts": []},
+  {"id": "neg-capital-australia", "set": "original", "route": "base", "prompt": "What's the capital of Australia?", "gold": [], "facts": ["canberra"]},
+  {"id": "neg-dragon-story", "set": "original", "route": "creative", "prompt": "Write a short story about a dragon who loves baking.", "gold": [], "facts": ["dragon"]},
+  {"id": "neg-autumn-haiku", "set": "original", "route": "creative", "prompt": "Write a haiku about autumn leaves.", "gold": [], "facts": []},
+  {"id": "neg-derivative", "set": "original", "route": "math", "prompt": "What's the derivative of x³·sin(x)?", "gold": [], "facts": ["3x\\^?2|3x²", "cos"]},
+  {"id": "neg-pages-per-day", "set": "original", "route": "math", "prompt": "Tom reads 25 pages a day. His book has 410 pages and he has already read 160. How many more days does he need?", "gold": [], "facts": ["\\b10\\b"]},
+  {"id": "neg-bus-percent", "set": "original", "route": "math", "prompt": "A school has 480 students and 35% of them take the bus. How many students take the bus?", "gold": [], "facts": ["\\b168\\b"]},
+
+  {
+   "id": "h-cs301-ta",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "Who is the TA for my databases class?",
+   "gold": [
+    {"section": "CS 301 — Course overview and instructor", "file": "courses/cs301.md", "needles": ["ta: marcus webb", "emailing the ta, marcus webb"]}
+   ],
+   "facts": ["marcus|webb"]
+  },
+  {
+   "id": "h-chen-email",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "What's Prof. Chen's email address?",
+   "gold": [
+    {"section": "CS 301 — Course overview and instructor", "file": "courses/cs301.md", "needles": ["instructor: prof. alicia chen (achen@example.edu)", "answers email (achen@example.edu)"]}
+   ],
+   "facts": ["achen@example\\.edu"]
+  },
+  {
+   "id": "h-project-team",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "Who's on my database project team?",
+   "gold": [
+    {"section": "CS 301 — Course project description", "file": "courses/cs301.md", "needles": ["jordan's team: jordan reyes, priya nair, sam okoro"]}
+   ],
+   "facts": ["priya", "sam\\b|okoro"]
+  },
+  {
+   "id": "h-not-in-nulls",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "What's the trap with NOT IN and NULLs that we covered?",
+   "gold": [
+    {"section": "CS 301 notes — Subqueries, IN vs EXISTS, and HW3 hints (lectures Sep 21–25)", "file": "notes/cs301_notes.md", "needles": ["not in returns no rows at all"]}
+   ],
+   "facts": ["not exists", "no rows|empty|nothing"]
+  },
+  {
+   "id": "h-sql-clause-order",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "In what order does SQL actually run the clauses of a query?",
+   "gold": [
+    {"section": "CS 301 notes — SQL evaluation order and NULLs (lecture Sep 14)", "file": "notes/cs301_notes.md", "needles": ["a select alias can't be used in where"]}
+   ],
+   "facts": ["from", "where", "group by", "having"]
+  },
+  {
+   "id": "h-inverse-okafor",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "How do I compute the inverse of a matrix the way Okafor showed us?",
+   "gold": [
+    {"section": "MATH 221 notes — Matrix multiplication and inverses (lectures Sep 8–10)", "file": "notes/math221_notes.md", "needles": ["row-reduce [a | i]"]}
+   ],
+   "facts": ["\\[\\s*a\\s*\\|\\s*i\\s*\\]|augment", "gauss.?jordan|row.?reduc|row operation|elimination"]
+  },
+  {
+   "id": "h-rank-nullity",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "What's the rank-nullity theorem from my notes?",
+   "gold": [
+    {"section": "MATH 221 notes — Rank, complete solution and rank–nullity (lectures Sep 29–Oct 1)", "file": "notes/math221_notes.md", "needles": ["full column rank (r = n): no free variables"]}
+   ],
+   "facts": ["n\\s*-\\s*r|rank\\s*\\+\\s*nullity|nullity\\s*\\+\\s*rank|rank\\(a\\)\\s*\\+"]
+  },
+  {
+   "id": "h-calculator-midterm",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "Can I bring a calculator to my linear algebra midterm?",
+   "gold": [
+    {"section": "MATH 221 notes — Midterm 1 format / syllabus: textbook and materials / AI tool policy", "file": "notes/math221_notes.md", "needles": ["closed book, no calculators, no note sheet", "no calculators are allowed on quizzes or exams", "no notes, no calculators, no devices"]}
+   ],
+   "facts": ["no calculators|not allowed|aren't allowed|are not allowed|not permitted|can't|cannot|\\bno\\b"]
+  },
+  {
+   "id": "h-essay1-example-tech",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "Which everyday technologies did we say were good examples for Essay 1?",
+   "gold": [
+    {"section": "PHIL 150 notes — Essay 1 tips from Dr. Lindqvist", "file": "notes/phil150_notes.md", "needles": ["smartphone notifications and attention"]}
+   ],
+   "facts": ["notification|google maps|spotify|fitness tracker|strava"]
+  },
+  {
+   "id": "h-theuth-myth",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "Remind me what the myth of Theuth is about.",
+   "gold": [
+    {"section": "PHIL 150 notes — Plato's Phaedrus and writing as pharmakon (seminar Sep 1–3)", "file": "notes/phil150_notes.md", "needles": ["writing will weaken memory"]}
+   ],
+   "facts": ["writing", "memory"]
+  },
+  {
+   "id": "h-silver-chalice",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "What's the silver chalice example about?",
+   "gold": [
+    {"section": "PHIL 150 notes — Aristotle's techne and the four causes (seminar Sep 8–10)", "file": "notes/phil150_notes.md", "needles": ["material cause: the silver"]}
+   ],
+   "facts": ["material", "formal", "final", "efficient"]
+  },
+  {
+   "id": "h-reading-response",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "What do I need to include in my weekly philosophy reading response?",
+   "gold": [
+    {"section": "PHIL 150 notes — Reading responses: what Dr. Lindqvist wants", "file": "notes/phil150_notes.md", "needles": ["one quote you found puzzling and why"]}
+   ],
+   "facts": ["300", "quote", "question"]
+  },
+  {
+   "id": "h-late-penalty-docs",
+   "set": "heldout",
+   "route": "techwriter",
+   "prompt": "Write documentation for my late_penalty function.",
+   "gold": [
+    {"section": "CS 301 project code — late_penalty() function in grading.py", "file": "notes/cs301_project_code.md", "needles": ["def late_penalty(score, days_late"]}
+   ],
+   "facts": ["days_late", "free_days_left|free late days", "20"]
+  },
+  {
+   "id": "h-library-shift",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "When do I work at the library?",
+   "gold": [
+    {"section": "Student profile — Jordan Reyes", "file": "profile.md", "needles": ["campus library job"]}
+   ],
+   "facts": ["\\bmon", "\\bwed", "18:00|\\b6(:00)? ?p\\.?m"]
+  },
+  {
+   "id": "h-db-software",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "What software do I need to install for the databases class?",
+   "gold": [
+    {"section": "CS 301 Database Systems syllabus — Required materials and software", "file": "syllabi/cs301_syllabus.md", "needles": ["sqlite 3.39 or newer and db browser for sqlite"]}
+   ],
+   "facts": ["sqlite", "db browser"]
+  },
+  {
+   "id": "h-candidate-vs-superkey",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "What's the difference between a candidate key and a superkey?",
+   "gold": [
+    {"section": "CS 301 notes — Relational model and keys (lectures Aug 24–28)", "file": "notes/cs301_notes.md", "needles": ["a minimal superkey (drop any column and it stops being unique)"]}
+   ],
+   "facts": ["minimal"]
+  },
+  {
+   "id": "h-final-weight-math",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "How much is the final worth in linear algebra?",
+   "gold": [
+    {"section": "MATH 221 — Grading breakdown / syllabus: letter grade cutoffs", "file": "courses/math221.md", "needles": ["midterm 2 20%, final exam 30%", "midterm 2 20%, final 30%"]}
+   ],
+   "facts": ["30\\s*%|30 percent"]
+  },
+  {
+   "id": "h-essay2-due-prompt",
+   "set": "heldout",
+   "route": "base",
+   "prompt": "When is the PHIL 150 Essay 2 due and what's the prompt?",
+   "gold": [
+    {"section": "PHIL 150 — Essay 2 prompt", "file": "courses/phil150.md", "needles": ["does social media extend or erode the self"]}
+   ],
+   "facts": ["nov(ember)?\\.? 20|11/20", "social media"]
+  },
+  {"id": "h-neg-photosynthesis", "set": "heldout", "route": "base", "prompt": "Explain how photosynthesis works.", "gold": [], "facts": ["chlorophyll|sunlight|light energy"]},
+  {"id": "h-neg-palindrome", "set": "heldout", "route": "coding", "prompt": "Write a Python function that checks whether a string is a palindrome.", "gold": [], "facts": ["def "]},
+  {"id": "h-neg-austen", "set": "heldout", "route": "base", "prompt": "Who wrote Pride and Prejudice?", "gold": [], "facts": ["austen"]},
+  {"id": "h-neg-jazz-cat", "set": "heldout", "route": "creative", "prompt": "Write a limerick about a cat who loves jazz.", "gold": [], "facts": []},
+  {"id": "h-neg-train-speed", "set": "heldout", "route": "math", "prompt": "A train travels 180 km in 2.5 hours. What is its average speed in km/h?", "gold": [], "facts": ["\\b72\\b"]},
+  {"id": "h-neg-banana-bread", "set": "heldout", "route": "base", "prompt": "Give me a recipe for banana bread.", "gold": [], "facts": ["banana"]}
+ ]
+}
