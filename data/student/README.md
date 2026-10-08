@@ -15,11 +15,11 @@ Fictional student data for the RAG step (pipeline step 4b). Nothing here is real
 
 ## Authoring rules
 
-- **One `##` section = one chunk.** The `#` title line and this README are not indexed.
-- **Headings must stand alone.** Write "CS 301 — Exam dates", not "Exams". The heading is embedded with the chunk, and the retriever never sees the file name.
+- **One `##` section = one chunk.** This README is not indexed.
+- **Headings stand alone here.** "CS 301 — Exam dates", not "Exams". Your own notes don't need this: each chunk is embedded with its file name and headings, and a sentence the model writes about where it sits (`python -m rag.context`). But these headings are what `data/rag_eval.json` matches on.
 - **Keep chunks short:** about 50–200 tokens. Long chunks waste the context budget.
 - **Repeat key facts** (course code, professor name) in each chunk that needs them, instead of relying on another chunk.
 
 Calendar lines must start `- Tue Oct 6:` (weekday, month, day) to be picked up as upcoming deadlines.
 
-To add your own data, replace these files and keep the rules above. No re-training is needed. Chunks are re-embedded at startup.
+To use your own notes, point `GLADIUS_WORKSPACE` at their folder instead (see `.env.example`). No re-training is needed. Chunks are re-embedded at startup.
