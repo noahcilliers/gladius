@@ -2,13 +2,15 @@
 
 Chunks come from the workspace folder (rag/workspace.py: GLADIUS_WORKSPACE, default the
 sample student in data/student), embedded once at startup with the router's Arctic Embed
-model (no second model in memory). Each route decides which collections it may see and how
-many chunks it gets; anything under RAG_THRESHOLD is dropped, so prompts unrelated to the
-student's courses go through unchanged.
+model (no second model in memory). Each chunk is embedded with its file and heading path and
+the model-written sentence cached by rag/context.py (GLADIUS_RAG_CONTEXT picks how much of
+that). Each route decides which collections it may see and how many chunks it gets; anything
+under RAG_THRESHOLD is dropped, so prompts unrelated to the student's courses go through unchanged.
 
 Run directly to index the workspace, and on the sample workspace also score retrieval on
 data/rag_eval.json (no llama-server needed):
     python -m rag.retriever
+    GLADIUS_RAG_CONTEXT=off python -m rag.retriever    # embedded as heading + body, as before
 """
 
 import datetime as dt
@@ -21,7 +23,8 @@ from pathlib import Path
 
 import numpy as np
 
-from rag.workspace import PROFILE_COLLECTION, SAMPLE_WORKSPACE, Chunk, load_chunks, workspace_dir
+from rag.context import ContextCache, context_mode, needs_context
+from rag.workspace import PROFILE_COLLECTION, SAMPLE_WORKSPACE, Chunk, load_chunks, profile_text, workspace_dir
 from settings import ROOT
 
 _DDL_RE = re.compile(r"CREATE TABLE\s+(\w+)\s*\((.*?)\);", re.S | re.I)
@@ -120,22 +123,28 @@ def estimate_tokens(text: str) -> int:
 
 
 class Retriever:
-    def __init__(self, router, root: Path | None = None, threshold: float = RAG_THRESHOLD, min_gap: float = RAG_MIN_GAP):
+    def __init__(self, router, root: Path | None = None, threshold: float = RAG_THRESHOLD, min_gap: float = RAG_MIN_GAP,
+                 context: str | None = None):
         """`router` is a router.Router; its embedding model is reused, not reloaded. `root` defaults
-        to the configured workspace (GLADIUS_WORKSPACE)."""
+        to the configured workspace (GLADIUS_WORKSPACE), `context` to GLADIUS_RAG_CONTEXT."""
         self.router = router
         self.threshold = threshold
         self.min_gap = min_gap
         self.root = root or workspace_dir()
         self.chunks, self.skipped = load_chunks(self.root)
+        self.context_mode = context or context_mode()
+        if self.context_mode == "llm":
+            cache = ContextCache()
+            for c in self.chunks:
+                c.context = cache.get(c) or ""
         # Bold markers cost tokens and the model doesn't need them.
-        self.profile = "\n\n".join(c.body for c in self.chunks if c.collection == PROFILE_COLLECTION).replace("**", "")
-        self.calendar = [line for c in self.chunks if c.source.endswith("calendar.md")
-                         for line in c.body.splitlines() if _CAL_LINE_RE.match(line)]
+        self.profile = profile_text(self.root).replace("**", "")
+        # Overlapping parts of a long calendar.md share lines.
+        self.calendar = list(dict.fromkeys(line for c in self.chunks if c.source.endswith("calendar.md")
+                                           for line in c.body.splitlines() if _CAL_LINE_RE.match(line)))
         # Arctic is asymmetric: queries get the "query" prefix (router.embed), documents get none.
-        self.vecs = router.model.encode(
-            [c.text for c in self.chunks], normalize_embeddings=True, convert_to_numpy=True
-        )
+        texts = [f"{c.heading}\n{c.body}" if self.context_mode == "off" else c.text for c in self.chunks]
+        self.vecs = router.model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
         self.collections = np.array([c.collection for c in self.chunks])
         self.searchable = tuple(str(c) for c in dict.fromkeys(self.collections) if c != PROFILE_COLLECTION)
 
@@ -158,7 +167,7 @@ class Retriever:
             budget = MAX_CONTEXT_TOKENS - (estimate_tokens(self.profile_block()) if cfg.profile else 0)
             kept = []
             for h in hits:  # drop the weakest chunks first if the context budget runs out
-                budget -= estimate_tokens(h.chunk.text)
+                budget -= estimate_tokens(f"{h.chunk.heading}\n{h.chunk.body}")  # what augment() injects
                 if budget < 0:
                     break
                 kept.append(h)
@@ -262,8 +271,19 @@ def schema_ddl(body: str, prompt: str, max_tables: int = 4) -> str:
     return "\n".join(tables[t][0] for t in touched[:max_tables])
 
 
+def ranked_headings(retriever: Retriever, prompt: str, route: str) -> list[str]:
+    """Every heading the route can search, best first, with no score cutoff (a split section counts once)."""
+    cfg = ROUTE_RAG.get(route, NO_RAG)
+    scope = retriever.scope(cfg.collections) + (("schemas",) if cfg.schema_k else ())
+    idx = np.flatnonzero(np.isin(retriever.collections, scope))
+    order = idx[np.argsort(-(retriever.vecs[idx] @ retriever.router.embed([prompt])[0]))]
+    return list(dict.fromkeys(retriever.chunks[i].heading for i in order))
+
+
 def evaluate(retriever: Retriever, router, cases: list[dict]) -> dict:
-    """Recall of expected headings, plus negative controls that should retrieve nothing."""
+    """Recall of expected headings, plus negative controls that should retrieve nothing. `mrr` and
+    `recall_at_5` score the ranking alone, before the score cutoffs, over the cases that expect something:
+    the cutoffs were fitted to one way of embedding chunks, the ranking wasn't."""
     rows = []
     for case in cases:
         route = router.route(case["prompt"], use_cache=False).route
@@ -276,10 +296,16 @@ def evaluate(retriever: Retriever, router, cases: list[dict]) -> dict:
         answered_by = retriever.notes_route(case["prompt"], route)
         live = [h.chunk.heading for h in retriever.retrieve(case["prompt"], answered_by).hits]
         ok_live = (not live) if not expected else any(e in live for e in expected)
+        ranked = ranked_headings(retriever, case["prompt"], case.get("route", route)) if expected else []
+        rank = next((i for i, h in enumerate(ranked, 1) if h in expected), None)
         rows.append({**case, "routed": route, "answered_by": answered_by, "got": got, "scores": [round(h.score, 3) for h in r.hits],
                      "recall": len(found) / len(expected) if expected else float(not got), "ok": ok,
-                     "ok_live": ok_live})
+                     "ok_live": ok_live, "rank": rank,
+                     "recall_at_5": len(set(ranked[:5]) & set(expected)) / len(expected) if expected else None})
+    positive = [r for r in rows if r["expected"]]
     return {
+        "mrr": sum(1 / r["rank"] for r in positive if r["rank"]) / max(len(positive), 1),
+        "recall_at_5": sum(r["recall_at_5"] for r in positive) / max(len(positive), 1),
         "hit_rate": sum(r["ok"] for r in rows) / len(rows),
         "hit_rate_live": sum(r["ok_live"] for r in rows) / len(rows),
         "recall": sum(r["recall"] for r in rows) / len(rows),
@@ -300,6 +326,11 @@ if __name__ == "__main__":
           f"index {retriever.vecs.nbytes / 1024:.0f} KB")
     for path, reason in retriever.skipped:
         print(f"  skipped {path.relative_to(retriever.root)} ({reason})")
+    need = [c for c in retriever.chunks if needs_context(c)]
+    have = sum(bool(c.context) for c in need)
+    print(f"Embedded with: {retriever.context_mode} (GLADIUS_RAG_CONTEXT)" + (
+        f", model sentence for {have}/{len(need)} chunks" + ("" if have == len(need) else "; python -m rag.context writes the rest")
+        if retriever.context_mode == "llm" else ""))
     if retriever.root != SAMPLE_WORKSPACE.resolve():
         raise SystemExit(f"{EVAL_PATH.name} is written for the sample workspace, so no eval here.")
 
@@ -314,10 +345,12 @@ if __name__ == "__main__":
             print(f"   {star} {score:.3f}  {heading}")
         missing = [e for e in row["expected"] if e not in row["got"]]
         if missing:
-            print(f"     missing: {missing}")
+            print(f"     missing: {missing} (first expected ranks #{row['rank']})")
     live_misses = [row["prompt"] for row in res["items"] if row["ok"] and not row["ok_live"]]
     for prompt in live_misses:
         print(f"  routed elsewhere, no context: {prompt}")
     print(f"\nEnd to end (actual route) hit rate {res['hit_rate_live']:.0%}")
     print(f"Hit rate {res['hit_rate']:.0%} · mean recall {res['recall']:.0%} · routing {res['routing_acc']:.0%} "
           f"({len(cases)} prompts, threshold {RAG_THRESHOLD}, min gap {RAG_MIN_GAP})")
+    print(f"Ranking with no cutoff: MRR {res['mrr']:.2f} · recall@5 {res['recall_at_5']:.0%} "
+          f"({sum(bool(c['expected']) for c in cases)} prompts that expect a chunk) · embedded with: {retriever.context_mode}")

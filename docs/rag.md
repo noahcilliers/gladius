@@ -71,6 +71,14 @@ Introduce a **workspace**: a directory of the student's notes that Gladius index
 
 ### 3.2 Chunking that survives real files
 
+> **Done** (`rag/workspace.py`). Every heading level starts a section; a section under
+> `MAX_CHUNK_CHARS` (~300 tokens) keeps its subsections, a longer one splits at them, and the
+> top level always splits (so the sample is still one `##` section = one chunk, unchanged).
+> Text that is still too long is cut at paragraphs, then lines, then sentences, with
+> `OVERLAP_CHARS` repeated. Code fences are never split on `#` comments; front matter is dropped;
+> text before the first heading is kept. Each chunk carries its heading path, line span and part.
+> Plus context sentences, §3.2b.
+
 Keep the good instinct (`##` section = chunk) but make it robust:
 
 - Markdown: split on `##` as today, **but** further split any section whose token estimate
@@ -78,6 +86,36 @@ Keep the good instinct (`##` section = chunk) but make it robust:
 - `.txt` and heading-less files: fall back to a token-bounded splitter with small overlap.
 - Carry `source` + `heading` (or a synthesized heading from the first line) so the
   `[file · heading]` "sources used" display keeps working.
+
+### 3.2b Context sentences (contextual retrieval)
+
+> **Done** (`rag/context.py`). The sample's headings are hand-written summaries ("CS 301 —
+> Late policy, late days and how to ask for an extension"); real notes say "Lecture 5". So each
+> chunk is embedded with its breadcrumb (folders, file name, headings) and a sentence the base
+> model writes after reading the whole file ("CS 301 Database Systems lecture notes on joins…").
+
+- One model call per chunk: ~1.5–2 s on an M4 (68 sample chunks in ~2 min). Cached in
+  `cache/rag/contexts.json` by chunk content, so only new or edited chunks cost anything;
+  `python -m rag.context` writes them and `run.sh` calls it before the UI starts.
+- The model reads the whole file when it fits in llama-server's context (`-c 2048` fits every
+  sample file); a longer file is shown a page at a time with its outline. Chunks on one page
+  share a prompt prefix, so llama-server reads the page once.
+- `GLADIUS_RAG_CONTEXT=llm|path|off` picks what's embedded; `off` reproduces the old index exactly.
+
+Measured on `data/rag_eval.json`, with the sample's headings replaced by short topics ("Late
+policy") or numbers ("Lecture 3"), scored by section; MRR / recall@5 are ranking alone, before
+the score cutoffs:
+
+| Headings | off | path | llm |
+|---|---|---|---|
+| hand-written (the sample) | **0.84 / 86%** | 0.83 / 81% | 0.78 / 83% |
+| short topics | 0.54 / 63% | 0.63 / 73% | 0.62 / **77%** |
+| numbered | 0.55 / 72% | 0.64 / 75% | **0.71 / 80%** |
+
+On real-looking headings the sentences recover most of what hand-written headings gave. On the
+sample they dilute headings that already say everything, and the fitted cutoffs (`RAG_THRESHOLD`,
+`NOTES_OVERRIDE_MIN`, per-route `min_score`) sit right at the shifted scores: the sample eval's
+end-to-end hit rate goes 85% → 74%. Fixing the gate (§3.5) is the next step, not re-fitting it.
 
 ### 3.3 Local embedding model (drop Snowflake Arctic)
 

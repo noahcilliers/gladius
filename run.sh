@@ -31,6 +31,10 @@ if ! curl -sf http://127.0.0.1:8080/health >/dev/null; then
   done
 fi
 
+# Context sentences for new or edited notes (rag/context.py). Cached, so only the first run, or a
+# big batch of new notes, takes a while (~2 s a chunk). Ctrl-C skips the rest for this run.
+"$PY" -m rag.context || echo "Starting without context sentences for some notes."
+
 # Always warm: after idling, macOS may have paged the model out (a 15 s first token).
 echo "Warming adapters..."
 "$PY" -c "
