@@ -2,6 +2,10 @@
 
 > Status: harness done, baseline recorded for the current retriever. This is the acceptance
 > test for the rewrite in [`docs/rag.md`](rag.md): run it on the new code and compare.
+>
+> **The code lives on the `rag_eval` branch, not `main`.** That covers the harness, the three
+> corpora, the cases and the recorded baseline run, all under `evals/rag/`. Every `evals/rag/…` path
+> below refers to that branch.
 
 ## 1. Why
 
@@ -98,7 +102,7 @@ model, adapters or llama.cpp build changed.
 ## 3. Baseline: the current retriever
 
 Recorded at commit `63c2f61` (the `rag/`, `core/`, `router.py` and `engine.py` code is
-identical on `main` at `4389bfa`). Full results are in `evals/rag/runs/baseline/`.
+identical on `main` at `113c215`). Full results are in `evals/rag/runs/baseline/`.
 
 ### 3.1 Retrieval
 
@@ -163,6 +167,14 @@ What the rewrite should move: `sparse` and `flat` toward `detailed` (heading-ind
 retrieval), heldout toward original (no overfitting), and false injection to 0 without losing hits.
 
 ## 4. Running it on the new implementation
+
+First bring the eval into the branch being measured, without merging anything else:
+
+```bash
+git fetch origin && git checkout origin/rag_eval -- evals
+```
+
+Then:
 
 ```bash
 ./serve.sh                                          # any worktree's; the harness uses LLAMA_URL (default :8080)
