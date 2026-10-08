@@ -27,7 +27,7 @@ def _delta(key: str, a, b) -> str:
 
 def comparability(ma: dict, mb: dict) -> tuple[list[str], list[str]]:
     """(blocking problems, warnings) for comparing run a with run b."""
-    blocking = [f"{k} differs: {ma.get(k)} vs {mb.get(k)}" for k in ("cases_hash", "corpora_lock", "today")
+    blocking = [f"{k} differs: {ma.get(k)} vs {mb.get(k)}" for k in ("prompts_hash", "corpora_lock", "today")
                 if ma.get(k) != mb.get(k)]
     warnings = []
     sa, sb = ma.get("server") or {}, mb.get("server") or {}
@@ -69,7 +69,7 @@ def main():
     out = [f"# {lb} vs {la}", "",
            f"`{la}`: commit `{ma['git']['commit'][:10]}`, {ma['timestamp']}  ",
            f"`{lb}`: commit `{mb['git']['commit'][:10]}`, {mb['timestamp']}  ",
-           f"cases `{mb['cases_hash']}` · corpora `{mb['corpora_lock']}` · cells read {la} → {lb} (change in points)", ""]
+           f"prompts `{mb['prompts_hash']}` · corpora `{mb['corpora_lock']}` · cells read {la} → {lb} (change in points)", ""]
     out += [f"> ⚠️ {w}" for w in blocking + warnings] + ([""] if blocking or warnings else [])
 
     for scope, keep in (("All cases", lambda c: True), ("Original set", lambda c: c["set"] == "original"),
@@ -84,17 +84,22 @@ def main():
 
     ia = {(r["corpus"], r["case"]): r for r in rows_a}
     ib = {(r["corpus"], r["case"]): r for r in rows_b}
+    answers = not (ma["retrieval_only"] or mb["retrieval_only"])
+
+    def shown(c, r):  # without answers on both sides, compare retrieval only
+        return cell(c, r["scores"] if answers else {k: v for k, v in r["scores"].items() if k != "correct"})
+
     changed = []
     for c in cases_list:
         for k in corpora:
             ra, rb = ia.get((k, c["id"])), ib.get((k, c["id"]))
-            if ra and rb and cell(c, ra["scores"]) != cell(c, rb["scores"]):
+            if ra and rb and shown(c, ra) != shown(c, rb):
                 changed.append((c, k, ra, rb))
     out += [f"## Cases that changed ({len(changed)})", "", f"| Case | Corpus | {la} | {lb} |", "|---|---|---|---|"]
-    out += [f"| `{c['id']}` | {k} | {cell(c, ra['scores'])} | {cell(c, rb['scores'])} |" for c, k, ra, rb in changed]
+    out += [f"| `{c['id']}` | {k} | {shown(c, ra)} | {shown(c, rb)} |" for c, k, ra, rb in changed]
     print("\n".join(out))
 
-    if not (ma["retrieval_only"] or mb["retrieval_only"]):
+    if answers:
         out += ["", "## Answers for the changed cases", ""]
         for c, k, ra, rb in changed:
             if k == REFERENCE and ra.get("answer") == rb.get("answer"):

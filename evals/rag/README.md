@@ -5,7 +5,7 @@ differ only in their headings (`corpora/detailed`, `sparse`, `flat`). Method, me
 baseline results are in [`docs/rag_eval.md`](../../docs/rag_eval.md).
 
 ```bash
-python -m evals.rag.run --label new-rag             # needs ./serve.sh; ~35 min on an M4
+python -m evals.rag.run --label new-rag             # needs ./serve.sh; ~17 min on an M4
 python -m evals.rag.run --label new-rag --retrieval-only   # ~10 s, no llama-server
 python -m evals.rag.compare baseline new-rag        # side by side vs the recorded baseline
 python -m evals.rag.run --validate                  # check cases.json against the corpora
@@ -21,5 +21,6 @@ python -m evals.rag.run --validate                  # check cases.json against t
 | `compare.py` | compares two runs case by case |
 | `runs/baseline/` | the current retriever, recorded before the rewrite |
 
-Don't edit `cases.json` or anything under `corpora/` on a branch you're measuring. `compare.py`
-refuses runs whose case or corpus hashes differ from the baseline's.
+Don't change a prompt or anything under `corpora/` on a branch you're measuring: `compare.py`
+refuses runs whose prompts or corpora differ from the baseline's. Gold passages and fact regexes
+can be refined, because every run is re-scored with the current `cases.json` when it's loaded.

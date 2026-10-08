@@ -64,8 +64,11 @@ def load_cases() -> list[dict]:
     return json.loads(CASES_PATH.read_text())["cases"]
 
 
-def cases_hash() -> str:
-    return hashlib.sha256(CASES_PATH.read_bytes()).hexdigest()[:16]
+def prompts_hash() -> str:
+    """Hash of the case ids and prompts, the only part of cases.json a run's raw output depends on.
+    Gold and facts are left out: every run is re-scored with the current file when it's loaded."""
+    prompts = [(c["id"], c["prompt"]) for c in load_cases()]
+    return hashlib.sha256(json.dumps(prompts, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
 def corpus_texts(variant: str) -> dict[str, str]:
@@ -132,7 +135,8 @@ def score(case: dict, row: dict, markers: list[str] | None) -> dict:
         else:
             out["clean"] = out["injected_lines"] == 0
     if row.get("answer") is not None and case["facts"]:
-        answer = normalize(row["answer"])
+        # Line by line, so a fact regex can stay within one line ("A-: 80-89%" isn't "90 for an A-").
+        answer = "\n".join(normalize(line) for line in row["answer"].splitlines())
         matched = [bool(re.search(f, answer, re.I)) for f in case["facts"]]
         out["facts_matched"] = matched
         out["correct"] = all(matched)
@@ -235,7 +239,7 @@ def write_reports(run_dir: Path):
         f"# RAG eval: {m['label']}",
         "",
         f"{m['timestamp']} · commit `{m['git']['commit'][:10]}`{' (dirty)' if m['git']['dirty'] else ''} on "
-        f"`{m['git']['branch']}` · cases `{m['cases_hash']}` · corpora `{m['corpora_lock']}` · today pinned to {m['today']}"
+        f"`{m['git']['branch']}` · prompts `{m['prompts_hash']}` · corpora `{m['corpora_lock']}` · today pinned to {m['today']}"
         + (" · **retrieval only**" if m["retrieval_only"] else ""),
         "",
         "R = gold passages delivered to the model (for negatives: whether any corpus text was injected). "
@@ -260,7 +264,7 @@ def write_reports(run_dir: Path):
         head.append(f"| `{c['id']}` | {c['set'][:4]} | {' / '.join(routes)} | " + " | ".join(cells) + " |")
     (run_dir / "summary.md").write_text("\n".join(head) + "\n")
     (run_dir / "summary.json").write_text(json.dumps({
-        "label": m["label"], "cases_hash": m["cases_hash"], "corpora_lock": m["corpora_lock"],
+        "label": m["label"], "prompts_hash": m["prompts_hash"], "corpora_lock": m["corpora_lock"],
         "all": {k: metrics(v, cases) for k, v in groups.items()},
         **{s: {k: metrics([r for r in v if cases[r["case"]]["set"] == s], cases) for k, v in groups.items()}
            for s in ("original", "heldout")},
@@ -298,8 +302,8 @@ def answer_block(corpus: str, case: dict, r: dict) -> str:
 # ---------------------------------------------------------------- running
 
 def _git(*args: str) -> str:
-    try:
-        return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True, timeout=10).stdout.strip()
+    try:  # rstrip, not strip: a `status --porcelain` line can start with a space
+        return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True, timeout=10).stdout.rstrip()
     except (OSError, subprocess.SubprocessError):
         return ""
 
@@ -320,14 +324,16 @@ def build_manifest(label: str, args, engine) -> dict:
     import rag.retriever as retriever_mod  # whatever the current implementation exposes
     import router as router_mod
 
-    # Dirty = uncommitted changes to the app. The eval's own files are covered by the hashes below.
-    dirty = [line for line in _git("status", "--porcelain").splitlines() if not line[3:].startswith("evals/")]
+    # Dirty = uncommitted changes to the app. The eval's own files are covered by the hashes below,
+    # and docs can't change a result.
+    dirty = [line for line in _git("status", "--porcelain").splitlines()
+             if not line[3:].startswith(("evals/", "docs/"))]
     manifest = {
         "label": label,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "git": {"commit": _git("rev-parse", "HEAD"), "branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
                 "dirty": bool(dirty), "dirty_files": dirty[:50]},
-        "cases_hash": cases_hash(),
+        "prompts_hash": prompts_hash(),
         "corpora_lock": lock_hash(),
         "harness_hash": hashlib.sha256(b"".join((HERE / f).read_bytes() for f in ("run.py", "build_corpora.py"))).hexdigest()[:16],
         "today": TODAY,
@@ -457,7 +463,7 @@ def main():
     manifest = build_manifest(args.label, args, engine)
     if args.resume and (run_dir / "manifest.json").exists():
         old = json.loads((run_dir / "manifest.json").read_text())
-        for key in ("cases_hash", "corpora_lock"):
+        for key in ("prompts_hash", "corpora_lock"):
             if old[key] != manifest[key]:
                 sys.exit(f"can't resume: {key} changed since this run started ({old[key]} → {manifest[key]})")
         manifest["timestamp"] = old["timestamp"]

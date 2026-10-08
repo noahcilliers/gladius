@@ -1,0 +1,96 @@
+{
+ "label": "baseline",
+ "timestamp": "2026-10-07 23:34:09",
+ "git": {
+  "commit": "63c2f61a710aa2e43cba1ccc11a3a3fd0b0af2f9",
+  "branch": "claude/rag-evaluation-baseline-33d659",
+  "dirty": false,
+  "dirty_files": []
+ },
+ "prompts_hash": "c13ebc8f822a8490",
+ "corpora_lock": "b29311c865313198",
+ "harness_hash": "179e215fa6c24204",
+ "today": "2026-10-05",
+ "corpora": [
+  "detailed",
+  "sparse",
+  "flat"
+ ],
+ "case_filter": null,
+ "retrieval_only": false,
+ "python": "3.11.15",
+ "platform": "macOS-26.6.2-arm64-arm-64bit",
+ "embed_model": "Snowflake/snowflake-arctic-embed-xs",
+ "retriever_constants": {
+  "PROFILE_COLLECTION": "profile",
+  "RAG_THRESHOLD": 0.57,
+  "RAG_MIN_GAP": 0.14,
+  "MAX_CONTEXT_TOKENS": 900,
+  "UPCOMING_DAYS": 10,
+  "NOTES_OVERRIDE_ROUTES": [
+   "math",
+   "sql",
+   "creative"
+  ],
+  "NOTES_OVERRIDE_MIN": 0.68
+ },
+ "env": {
+  "GLADIUS_WORKSPACE": null,
+  "GLADIUS_TODAY": "2026-10-05",
+  "LLAMA_URL": null,
+  "HF_HUB_OFFLINE": "1"
+ },
+ "server": {
+  "url": "http://127.0.0.1:8080",
+  "cmdline": [
+   "vendor/llama.cpp/build/bin/llama-server",
+   "-m",
+   "models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+   "--lora",
+   "adapters/math.gguf,adapters/techwriter.gguf,adapters/creative.gguf,adapters/coding.gguf",
+   "--lora-init-without-apply",
+   "--load-mode",
+   "none",
+   "-fa",
+   "on",
+   "-ctk",
+   "q8_0",
+   "-ctv",
+   "q8_0",
+   "-ub",
+   "256",
+   "-c",
+   "2048",
+   "-np",
+   "1",
+   "--port",
+   "8080"
+  ],
+  "build_info": "b1-bed0a85",
+  "model_path": "/Users/noahcilliers/gladius/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+  "model_bytes": 2019377696,
+  "n_ctx": 2048,
+  "adapters": [
+   {
+    "id": 0,
+    "path": "adapters/math.gguf",
+    "sha256": "f93e9ee3a9fb5729a21035bff9551e16fc55ac6565a215ba34dce164bf57202d"
+   },
+   {
+    "id": 1,
+    "path": "adapters/techwriter.gguf",
+    "sha256": "e6d45c706649bf4358998ecb0a9c61284e47385de2daa9dd5b7ec8799dd84ff4"
+   },
+   {
+    "id": 2,
+    "path": "adapters/creative.gguf",
+    "sha256": "5345a7cbf7605b91c0a9709197569b864458a5530de9fd3ddd5f6926a4422481"
+   },
+   {
+    "id": 3,
+    "path": "adapters/coding.gguf",
+    "sha256": "3acd0b9b2587767562dc834fe725baa3f0c2b22303697c10c7fb7a3a211359bf"
+   }
+  ]
+ }
+}

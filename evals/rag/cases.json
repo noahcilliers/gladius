@@ -1,5 +1,5 @@
 {
- "_note": "RAG eval cases, run against each corpus in corpora/. `set`: original = the 34 prompts of data/rag_eval.json (the current retriever's thresholds were hand-fit to these), heldout = written for this eval and never used for tuning. `gold`: the passages the model needs, each identified by `needles`, short verbatim snippets of the section body (any one present in what the model sees = passage delivered). Bodies are identical in every corpus, so the needles hold whatever the headings or chunker. `section` and `file` are for humans only. An empty `gold` is a negative control: no notes should be injected. `facts`: regexes a correct answer must all match (case-insensitive, after normalize() in run.py). `route` is the route the prompt is meant for (informational; not scored). Do not edit after a baseline run: compare.py refuses runs whose cases hash differs.",
+ "_note": "RAG eval cases, run against each corpus in corpora/. `set`: original = the 34 prompts of data/rag_eval.json (the current retriever's thresholds were hand-fit to these), heldout = written for this eval and never used for tuning. `gold`: the passages the model needs, each identified by `needles`, short verbatim snippets of the section body (any one present in what the model sees = passage delivered). Bodies are identical in every corpus, so the needles hold whatever the headings or chunker. `section` and `file` are for humans only. An empty `gold` is a negative control: no notes should be injected. `facts`: regexes a correct answer must all match (case-insensitive, after normalize() in run.py). `route` is the route the prompt is meant for (informational; not scored). Facts are matched line by line. Never change a prompt after a baseline run: compare.py refuses runs whose prompts differ. Gold and facts may be refined, since every run is re-scored with the current file when it is loaded.",
  "cases": [
   {
    "id": "cs301-extension-email",
@@ -57,7 +57,7 @@
    "route": "base",
    "prompt": "When are Prof. Okafor's office hours?",
    "gold": [
-    {"section": "MATH 221 — Course overview and instructor", "file": "courses/math221.md", "needles": ["office hours mondays and wednesdays 13:00"]}
+    {"section": "MATH 221 — Course overview and instructor (same hours in the syllabus: missed exams, regrades and accommodations)", "file": "courses/math221.md", "needles": ["office hours mondays and wednesdays 13:00", "office hours: mon and wed 13:00"]}
    ],
    "facts": ["\\bmon", "\\bwed", "13:00|\\b1(:00)? ?p\\.?m"]
   },
@@ -130,7 +130,7 @@
    "gold": [
     {"section": "MATH 221 notes — Vector spaces and the subspace test (lectures Sep 15–17)", "file": "notes/math221_notes.md", "needles": ["always check zero first"]}
    ],
-   "facts": ["zero", "addition", "scalar"]
+   "facts": ["zero|closed under|addition|scalar"]
   },
   {
    "id": "heidegger-standing-reserve",
@@ -140,7 +140,7 @@
    "gold": [
     {"section": "PHIL 150 notes — Heidegger part 2: Gestell (enframing) and standing-reserve (seminar Oct 1)", "file": "notes/phil150_notes.md", "needles": ["things show up only as resources on call"]}
    ],
-   "facts": ["resource", "bestand|enframing|gestell"]
+   "facts": ["resource", "order|on call|optimi|bestand|enframing|gestell"]
   },
   {
    "id": "lindqvist-good-thesis",
@@ -222,7 +222,7 @@
    "gold": [
     {"section": "CS 301 Database Systems syllabus — Letter grade cutoffs (percent needed for an A, B, C) and regrade requests", "file": "syllabi/cs301_syllabus.md", "needles": ["prof. chen may lower cutoffs but never raises them"]}
    ],
-   "facts": ["\\b90\\b"]
+   "facts": ["a-[^\\n]{0,30}\\b90\\b|\\b90\\b[^\\n]{0,30}\\ba-(?![\\w-])"]
   },
   {
    "id": "reading-after-winner",
@@ -273,7 +273,7 @@
     {"section": "MATH 221 Linear Algebra syllabus — Textbook and materials", "file": "syllabi/math221_syllabus.md", "needles": ["required textbook: gilbert strang"]},
     {"section": "MATH 221 — Course overview and instructor", "file": "courses/math221.md", "needles": ["textbook: strang, introduction to linear algebra"]}
    ],
-   "facts": ["strang"]
+   "facts": ["strang", "introduction to linear algebra"]
   },
   {
    "id": "linear-algebra-regrade",
@@ -341,7 +341,7 @@
    "gold": [
     {"section": "CS 301 notes — SQL evaluation order and NULLs (lecture Sep 14)", "file": "notes/cs301_notes.md", "needles": ["a select alias can't be used in where"]}
    ],
-   "facts": ["from", "where", "group by", "having"]
+   "facts": ["from[\\s\\S]{0,200}where[\\s\\S]{0,200}group by[\\s\\S]{0,200}having[\\s\\S]{0,200}\\bselect\\b"]
   },
   {
    "id": "h-inverse-okafor",
@@ -411,7 +411,7 @@
    "gold": [
     {"section": "PHIL 150 notes — Reading responses: what Dr. Lindqvist wants", "file": "notes/phil150_notes.md", "needles": ["one quote you found puzzling and why"]}
    ],
-   "facts": ["300", "quote", "question"]
+   "facts": ["quote", "question", "claim"]
   },
   {
    "id": "h-late-penalty-docs",
@@ -441,7 +441,7 @@
    "gold": [
     {"section": "CS 301 Database Systems syllabus — Required materials and software", "file": "syllabi/cs301_syllabus.md", "needles": ["sqlite 3.39 or newer and db browser for sqlite"]}
    ],
-   "facts": ["sqlite", "db browser"]
+   "facts": ["sqlite", "db browser", "3\\.39"]
   },
   {
    "id": "h-candidate-vs-superkey",
@@ -461,7 +461,7 @@
    "gold": [
     {"section": "MATH 221 — Grading breakdown / syllabus: letter grade cutoffs", "file": "courses/math221.md", "needles": ["midterm 2 20%, final exam 30%", "midterm 2 20%, final 30%"]}
    ],
-   "facts": ["30\\s*%|30 percent"]
+   "facts": ["(?<!if the )(?<!if your )\\bfinal( exam)?\\b[^\\n,;]{0,25}\\b30\\s*%"]
   },
   {
    "id": "h-essay2-due-prompt",

@@ -96,7 +96,7 @@ runs too, so comparisons stay fair.
 - **Offline embeddings:** the embedding model loads from the local cache (`HF_HUB_OFFLINE=1`).
 - **Not fixed:** latency. It depends on what else is running.
 
-`compare.py` refuses to compare runs whose case or corpus hashes differ. It warns if the base
+`compare.py` refuses to compare runs whose prompts or corpora differ. It warns if the base
 model, adapters or llama.cpp build changed.
 
 ## 3. Baseline: the current retriever
@@ -108,11 +108,11 @@ identical on `main` at `113c215`). Full results are in `evals/rag/runs/baseline/
 
 | | detailed | sparse | flat |
 |---|---|---|---|
-| Retrieval hit rate, all 45 note questions | **78%** | **53%** | **44%** |
-| … original set (27, tuned) | 85% | 59% | 48% |
+| Retrieval hit rate, all 45 note questions | **78%** | **53%** | **47%** |
+| … original set (27, tuned) | 85% | 59% | 52% |
 | … heldout set (18, untuned) | 67% | 44% | 39% |
-| Gold recall | 70% | 46% | 35% |
-| All gold delivered | 64% | 42% | 29% |
+| Gold recall | 70% | 46% | 37% |
+| All gold delivered | 64% | 42% | 31% |
 | False injection, all 13 controls | 15% | 15% | 15% |
 | … original (7) / heldout (6) | 0% / 33% | 0% / 33% | 0% / 33% |
 | Added prompt tokens per note question | 460 | 379 | 467 |
@@ -127,12 +127,24 @@ that.
 
 ### 3.2 Answers
 
-*Filled in from `evals/rag/runs/baseline/summary.md` once the baseline run finishes.*
+| | notes off | detailed | sparse | flat |
+|---|---|---|---|---|
+| Answer accuracy, all 45 note questions | 9% | **67%** | **44%** | **42%** |
+| … original set (27, tuned) | 11% | 74% | 44% | 48% |
+| … heldout set (18, untuned) | 6% | 56% | 44% | 33% |
+| Off-topic controls answered correctly (10 graded) | 100% | 100% | 100% | 100% |
+
+The answers took 16.6 minutes for all 232 (58 prompts × 3 corpora plus notes off) on an M4.
+Before these numbers were published, every answer where retrieval and the fact check disagreed
+was read by hand. Fact regexes that passed generic hedging (a made-up grading scale, a list of five
+popular textbooks) or failed correct answers were fixed in `cases.json`, and the run was re-scored.
 
 ### 3.3 What the baseline shows
 
 1. **Headings do most of the work.** Shortening the headings to what a student would write
-   costs a third of the hits. Removing them costs nearly half. Typical losses:
+   costs a third of the hits, and removing them costs two-fifths. Answers follow retrieval: notes
+   add 58 points of answer accuracy with the tuned headings, but only 35 (sparse) and 33 (flat)
+   without them. Typical losses:
    - "From my lecture notes, what's the difference between WHERE and HAVING?" hits with the
      `GROUP BY, HAVING vs WHERE` heading and misses with `GROUP BY`.
    - The two SQL schema prompts lose their schema entirely. A schema chunk's body is bare DDL, so
@@ -162,9 +174,33 @@ that.
 5. **Multi-passage questions are capped.** The base route injects at most 2 chunks plus the
    profile. So "When is my linear algebra midterm and what does it cover?" gets 1 of its 3 gold
    passages on every corpus, and the deadline questions get 1 of 4–5.
+6. **Delivering the passage isn't enough.** 13 answers were wrong although at least one gold
+   passage was in the prompt. Three of those are the `late_penalty` docs, which never state the
+   20%-a-day rule. Among the rest:
+   - "What's due before the end of October?" (every corpus): the whole October calendar was in the
+     prompt, but the answer stopped at Oct 16. It missed the CS 301 midterm (Oct 21), Problem Set 6
+     (Oct 22) and HW4 (Oct 30).
 
-What the rewrite should move: `sparse` and `flat` toward `detailed` (heading-independent
-retrieval), heldout toward original (no overfitting), and false injection to 0 without losing hits.
+   The clearest failures are where a second, wrong chunk was injected next to the right one:
+   - "How do I request a regrade on my linear algebra exam?" (detailed): both the MATH 221 and
+     CS 301 regrade policies were injected, and the answer gave CS 301's Gradescope rule.
+   - "What did Prof. Chen say would be on the databases midterm?" (sparse): her midterm tips were
+     in the prompt, but the answer came from the syllabus chunk injected before them and said the
+     notes don't mention it.
+   - "When do I work at the library?" (detailed): the answer gave 10:00–10:50, the CS 301 lecture
+     slot from the same profile.
+
+   Precision matters as well as recall: with a 3B model, one wrong chunk can outweigh the right one.
+7. **Off-topic injection didn't hurt answers here.** All 10 graded controls were answered
+   correctly on every corpus, including the two that got the profile or stray notes. At this
+   scale, false injection costs tokens (330–690 per prompt) rather than correctness.
+
+What the rewrite should move:
+
+- `sparse` and `flat` toward `detailed`, in both hit rate and answer accuracy (heading-independent
+  retrieval)
+- heldout toward original (no overfitting)
+- false injection to 0 without losing hits
 
 ## 4. Running it on the new implementation
 
@@ -178,7 +214,7 @@ Then:
 
 ```bash
 ./serve.sh                                          # any worktree's; the harness uses LLAMA_URL (default :8080)
-python -m evals.rag.run --label new-rag             # ~35 min on an M4; --retrieval-only takes ~10 s
+python -m evals.rag.run --label new-rag             # ~17 min on an M4; --retrieval-only takes ~10 s
 python -m evals.rag.compare baseline new-rag        # writes runs/new-rag/compare_vs_baseline.md
 ```
 
@@ -187,9 +223,11 @@ answer changed, with both answers.
 
 Rules:
 
-- Don't edit `cases.json`, `corpora/`, `sparse_headings.json` or `corpora.lock` on the branch
-  being measured. If the cases need to change, change them on `main` and re-run the baseline at
-  the old commit, so both runs use the same cases.
+- Don't change a prompt, `corpora/`, `sparse_headings.json` or `corpora.lock` on the branch being
+  measured; raw outputs depend on them, and `compare.py` refuses runs where they differ. Gold
+  passages and fact regexes can be refined at any time, because both runs are re-scored with the
+  current `cases.json` whenever they're loaded. New prompts mean re-running the baseline at the
+  old commit.
 - The harness only touches the app through `core.Pipeline` (`route`, `retrieve`, `stream`),
   `core.Options(use_rag=…)`, the `turn` fields `model_prompt`, `route`, `routing` and `rag`, and
   the `GLADIUS_WORKSPACE` env var. If the rewrite changes those, adapt `run_case()` and the
