@@ -165,6 +165,9 @@ injection is measured.
 
 ## 5. Phasing
 
+The baseline every phase is measured against is in [`docs/rag_eval.md`](rag_eval.md): the
+current retriever on detailed, sparse and heading-less versions of the sample notes.
+
 1. **Embedder swap** behind the `Embedder` interface; re-run the existing RAG eval to
    re-establish a baseline on the new model. (Unblocks everything; also unblocks
    `docs/specialists.md`.)
