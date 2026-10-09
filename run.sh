@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # One command for the demo: start llama-server if it isn't running, wait until it's
 # ready, warm every adapter so the first live prompt isn't a cold start, then open
-# the Gladius UI (retro.py).
+# the Gladius UI (retro.py). A server this script started is stopped when the UI exits
+# (Ctrl+C); one that was already running (e.g. from ./serve.sh) is left alone.
 #   ./run.sh            # UI on http://localhost:8503
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -20,6 +21,23 @@ if [[ ! -x "$PY" || ! -f models/Llama-3.2-3B-Instruct-Q4_K_M.gguf || ! -x vendor
   echo "Gladius isn't installed yet. Run ./setup.sh first."
   exit 1
 fi
+
+# Stop what we started on any exit: Ctrl+C, a closed terminal, or a kill aimed only at
+# this script's pid. Without this, killing just the UI orphans llama-server, which keeps
+# ~2 GB of RAM until reboot. (serve.sh execs, so $! is llama-server itself.)
+server_pid= ui_pid=
+cleanup() {
+  for pid in $ui_pid $server_pid; do
+    kill -0 "$pid" 2>/dev/null || continue
+    [[ $pid == "$server_pid" ]] && echo "Stopping llama-server..."
+    kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+  done
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 
 if ! curl -sf http://127.0.0.1:8080/health >/dev/null; then
   echo "Starting llama-server (log: logs/server.log)..."
@@ -42,8 +60,12 @@ for route in ['base', *e.adapter_ids]:
 print(f'  server memory {e.server_mem_mb():.0f} MB')
 "
 
-exec "$PY" -m streamlit run retro.py --server.headless true --server.port "$UI_PORT" \
+# In the background plus wait (not exec, not foreground) so a signal to this script runs
+# the traps right away instead of after Streamlit exits.
+"$PY" -m streamlit run retro.py --server.headless true --server.port "$UI_PORT" \
   --server.fileWatcherType none \
   --client.toolbarMode minimal --theme.base dark --theme.primaryColor "#ff8a1f" \
   --theme.backgroundColor "#090604" --theme.secondaryBackgroundColor "#110b06" \
-  --theme.textColor "#f6e6d3" --theme.font monospace
+  --theme.textColor "#f6e6d3" --theme.font monospace &
+ui_pid=$!
+wait "$ui_pid"
