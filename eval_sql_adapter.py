@@ -42,7 +42,7 @@ def main():
     engine = Engine()
     if not engine.has_adapter("sql"):
         raise SystemExit("The sql adapter isn't loaded (it was dropped from serve.sh). Add adapters/sql.gguf "
-                         "back to its --lora list to rerun this comparison; results/sql_adapter.json has the last run.")
+                         "back to its --lora-scaled list to rerun this comparison; results/sql_adapter.json has the last run.")
     sets = {"original": spec["questions"], "single_table": single}
     out = {}
     for set_name, questions in sets.items():
