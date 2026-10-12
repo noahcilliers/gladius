@@ -17,13 +17,16 @@ import datetime as dt
 import json
 import os
 import re
+import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import requests
 
-from rag.context import ContextCache, context_mode, needs_context
+from rag.context import ContextCache, ContextWriter, context_mode, needs_context, write_contexts
 from rag.workspace import PROFILE_COLLECTION, SAMPLE_WORKSPACE, Chunk, load_chunks, profile_text, workspace_dir
 from settings import ROOT
 
@@ -133,20 +136,74 @@ class Retriever:
         self.root = root or workspace_dir()
         self.chunks, self.skipped = load_chunks(self.root)
         self.context_mode = context or context_mode()
+        self.cache = ContextCache()
         if self.context_mode == "llm":
-            cache = ContextCache()
             for c in self.chunks:
-                c.context = cache.get(c) or ""
+                c.context = self.cache.get(c) or ""
         # Bold markers cost tokens and the model doesn't need them.
         self.profile = profile_text(self.root).replace("**", "")
         # Overlapping parts of a long calendar.md share lines.
         self.calendar = list(dict.fromkeys(line for c in self.chunks if c.source.endswith("calendar.md")
                                            for line in c.body.splitlines() if _CAL_LINE_RE.match(line)))
-        # Arctic is asymmetric: queries get the "query" prefix (router.embed), documents get none.
-        texts = [f"{c.heading}\n{c.body}" if self.context_mode == "off" else c.text for c in self.chunks]
-        self.vecs = router.model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
+        self.vecs = self._encode(self.chunks)
         self.collections = np.array([c.collection for c in self.chunks])
         self.searchable = tuple(str(c) for c in dict.fromkeys(self.collections) if c != PROFILE_COLLECTION)
+        self._lock = threading.Lock()  # the context writer swaps rows of self.vecs while searches read it
+        self._writer: threading.Thread | None = None
+        self._stop = threading.Event()
+
+    def _encode(self, chunks: list[Chunk]) -> np.ndarray:
+        # Arctic is asymmetric: queries get the "query" prefix (router.embed), documents get none.
+        texts = [f"{c.heading}\n{c.body}" if self.context_mode == "off" else c.text for c in chunks]
+        return self.router.model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
+
+    @property
+    def context_progress(self) -> tuple[int, int]:
+        """(chunks that have their context sentence, chunks that get one); (0, 0) when sentences are off."""
+        need = [c for c in self.chunks if needs_context(c)] if self.context_mode == "llm" else []
+        return sum(self.cache.get(c) is not None for c in need), len(need)
+
+    def start_context_writer(self, log: Callable[[str], None] = print) -> bool:
+        """Write the missing context sentences on a background thread (rag/context.py), re-embedding
+        each chunk as its sentence arrives, so nothing has to wait for them: until then a chunk is
+        searched by its breadcrumb. llama-server takes one request at a time, so a chat sent meanwhile
+        waits for the sentence being written (~2 s) and then goes first. Returns False if there's
+        nothing to write; calling it again while it runs does nothing."""
+        if self.context_mode != "llm":
+            return False
+        if self._writer and self._writer.is_alive():
+            return True
+        todo = [c for c in self.chunks if needs_context(c) and self.cache.get(c) is None]
+        if not todo:
+            return False
+        self._stop.clear()
+        self._writer = threading.Thread(target=self._write_contexts, args=(todo, log), name="context-writer", daemon=True)
+        self._writer.start()
+        return True
+
+    def stop_context_writer(self):
+        """Stop after the sentence being written; the rest are picked up by the next start."""
+        self._stop.set()
+        if self._writer:
+            self._writer.join()
+
+    def _write_contexts(self, todo: list[Chunk], log: Callable[[str], None]):
+        index = {id(c): i for i, c in enumerate(self.chunks)}
+
+        def embed(c: Chunk, context: str):
+            c.context = context
+            vec = self._encode([c])[0]
+            with self._lock:
+                self.vecs[index[id(c)]] = vec
+
+        try:
+            writer = ContextWriter()
+            log(f"Context sentences: writing {len(todo)} in the background ({writer.model}); notes are searchable meanwhile.")
+            res = write_contexts(self.root, todo, self.cache, writer, log=log, on_written=embed, stop=self._stop)
+            log(f"Context sentences: wrote {res['written']} in {res['seconds']:.0f}s"
+                + (f", {len(res['failed'])} failed" if res["failed"] else ""))
+        except requests.RequestException as e:  # server stopped or restarted: the cache keeps what's done
+            log(f"Context sentences: stopped, llama-server didn't answer ({type(e).__name__}). The rest are written next launch.")
 
     def scope(self, collections: tuple[str, ...] | None) -> tuple[str, ...]:
         """A route's collections as this workspace has them (see RouteRAG.collections)."""
@@ -192,7 +249,8 @@ class Retriever:
     def search(self, vec: np.ndarray, collections: tuple[str, ...], k: int, min_score: float | None = None) -> list[Hit]:
         if not self.chunks:
             return []
-        all_scores = self.vecs @ vec
+        with self._lock:
+            all_scores = self.vecs @ vec
         floor = min_score if min_score is not None else min(self.threshold, float(np.median(all_scores)) + self.min_gap)
         idx = np.flatnonzero(np.isin(self.collections, collections))
         scores = all_scores[idx]
