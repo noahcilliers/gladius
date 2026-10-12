@@ -72,6 +72,17 @@ class Pipeline:
     def clear_cache(self):
         self.router.clear_cache()
 
+    def start_context_writer(self) -> bool:
+        """Write missing context sentences in the background while the app is in use
+        (Retriever.start_context_writer). An app calls this once; nothing starts it by default, so
+        evals and scripts that build a Pipeline search a fixed index."""
+        return self.retriever.start_context_writer()
+
+    @property
+    def context_progress(self) -> tuple[int, int]:
+        """(chunks that have their context sentence, chunks that get one); (0, 0) when sentences are off."""
+        return self.retriever.context_progress
+
     @property
     def n_chunks(self) -> int:
         return len(self.retriever.chunks)

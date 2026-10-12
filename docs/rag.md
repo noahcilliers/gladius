@@ -95,8 +95,13 @@ Keep the good instinct (`##` section = chunk) but make it robust:
 > model writes after reading the whole file ("CS 301 Database Systems lecture notes on joins…").
 
 - One model call per chunk: ~1.5–2 s on an M4 (68 sample chunks in ~2 min). Cached in
-  `cache/rag/contexts.json` by chunk content, so only new or edited chunks cost anything;
-  `python -m rag.context` writes them and `run.sh` calls it before the UI starts.
+  `cache/rag/contexts.json` by chunk content, so only new or edited chunks cost anything.
+- Nothing waits for them. The app starts at once and writes the missing ones on a background
+  thread (`Pipeline.start_context_writer`); a chunk is searched by its breadcrumb until its
+  sentence arrives, then re-embedded in place. llama-server takes one request at a time, so a
+  chat sent meanwhile waits for the sentence in progress: first token ~1.8 s instead of ~0.9 s
+  while the writer runs. Evals and scripts don't start the writer, so their index is fixed;
+  `python -m rag.context` writes every sentence up front.
 - The model reads the whole file when it fits in llama-server's context (`-c 2048` fits every
   sample file); a longer file is shown a page at a time with its outline. Chunks on one page
   share a prompt prefix, so llama-server reads the page once.

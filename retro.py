@@ -204,7 +204,9 @@ st.html(CSS)
 
 @st.cache_resource(show_spinner="BOOTING SPECIALISTS…")
 def load() -> Pipeline:
-    return Pipeline()
+    pipeline = Pipeline()
+    pipeline.start_context_writer()  # context sentences for new notes, written while the app is in use
+    return pipeline
 
 
 # ---------- sessions ----------
@@ -399,8 +401,10 @@ with st.sidebar:
     st.html('<div class="sec">CONTROLS</div>')
     force = st.selectbox("Specialist", ["auto"] + list(ROUTES), label_visibility="collapsed",
                          format_func=lambda r: "AUTO · router decides" if r == "auto" else f"FORCE · {ROUTES[r][0]}")
+    have, need = pipeline.context_progress
     use_rag = st.checkbox("Use my notes and schedule", value=True,
-                          help=f"Searches {pipeline.n_chunks} local chunks in {pipeline.workspace}. Nothing leaves this laptop.")
+                          help=f"Searches {pipeline.n_chunks} local chunks in {pipeline.workspace}. Nothing leaves this laptop."
+                               + (f" Still indexing in the background: {have}/{need} chunks have their context sentence." if have < need else ""))
     compare = st.checkbox("Also answer with base model")
     show_trace = st.toggle("Pipeline view", value=True, help="Show every request's path: embed, cache, route, notes, generate.")
 
