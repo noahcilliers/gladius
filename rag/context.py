@@ -109,7 +109,8 @@ class ContextWriter:
         props = requests.get(f"{url}/props", timeout=5).json()
         self.n_ctx = props["default_generation_settings"]["n_ctx"]
         self.model = Path(props.get("model_path", "unknown")).name
-        # Every loaded adapter at scale 0: without this the server's own scales (1.0) apply.
+        # Every loaded adapter at scale 0 on each request, whatever the server's defaults are: serve.sh
+        # starts them at 0, but a llama-server started another way has them all on.
         resp = requests.get(f"{url}/lora-adapters", timeout=5)
         self.lora = [{"id": a["id"], "scale": 0.0} for a in resp.json()] if resp.ok else []
 
