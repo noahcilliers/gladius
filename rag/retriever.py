@@ -24,6 +24,7 @@ from pathlib import Path
 import numpy as np
 
 from rag.context import ContextCache, context_mode, needs_context
+from rag.index import EmbedStats, VectorStore, index_enabled
 from rag.workspace import PROFILE_COLLECTION, SAMPLE_WORKSPACE, Chunk, load_chunks, profile_text, workspace_dir
 from settings import ROOT
 
@@ -144,7 +145,17 @@ class Retriever:
                                            for line in c.body.splitlines() if _CAL_LINE_RE.match(line)))
         # Arctic is asymmetric: queries get the "query" prefix (router.embed), documents get none.
         texts = [f"{c.heading}\n{c.body}" if self.context_mode == "off" else c.text for c in self.chunks]
-        self.vecs = router.model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
+        # Vectors are cached on disk by their text and model (rag/index.py): only new or edited chunks embed.
+        from router import EMBED_MODEL
+
+        def encode(batch: list[str]) -> np.ndarray:
+            return router.model.encode(batch, normalize_embeddings=True, convert_to_numpy=True)
+
+        if index_enabled():
+            store = VectorStore(EMBED_MODEL, settings="normalize;documents:no-prefix")
+            self.vecs, self.embed_stats = store.embed(texts, encode)
+        else:
+            self.vecs, self.embed_stats = encode(texts), EmbedStats(len(texts), 0, 0)
         self.collections = np.array([c.collection for c in self.chunks])
         self.searchable = tuple(str(c) for c in dict.fromkeys(self.collections) if c != PROFILE_COLLECTION)
 
@@ -322,8 +333,9 @@ if __name__ == "__main__":
     retriever = Retriever(router)
     counts = {str(c): int((retriever.collections == c).sum()) for c in dict.fromkeys(retriever.collections)}
     print(f"Workspace {retriever.root}")
+    st = retriever.embed_stats
     print(f"Indexed {len(retriever.chunks)} chunks {counts} in {(time.perf_counter() - t0) * 1000:.0f} ms, "
-          f"index {retriever.vecs.nbytes / 1024:.0f} KB")
+          f"index {retriever.vecs.nbytes / 1024:.0f} KB; embedded {st.embedded}, from cache {st.cached}")
     for path, reason in retriever.skipped:
         print(f"  skipped {path.relative_to(retriever.root)} ({reason})")
     need = [c for c in retriever.chunks if needs_context(c)]
