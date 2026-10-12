@@ -9,7 +9,8 @@ when absent: a root `profile.md` (the "about me" block, collection "profile") an
 anywhere, whose `- Mon Oct 6 ...` lines feed the upcoming-deadlines list.
 
 Chunks follow the file's own structure (chunk_file), so notes don't have to be written for the
-retriever: each chunk keeps the headings it sits under, and is embedded with them and its file path
+retriever: headings are `#` lines, or title-like lines in a file that has none (_plain_title); each
+chunk keeps the headings it sits under, and is embedded with them and its file path
 (Chunk.breadcrumb) plus, once rag/context.py has run, a sentence from the model placing it in its file.
 """
 
@@ -36,6 +37,7 @@ PROFILE_COLLECTION = "profile"
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(\S.*?)(?:\s+#+)?\s*$")
 _FENCE_RE = re.compile(r"^\s{0,3}(```|~~~)")
 _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
+_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'’]*")
 
 
 class WorkspaceError(Exception):
@@ -130,21 +132,41 @@ def read_lines(path: Path) -> list[str]:
     return lines
 
 
-def parse(lines: list[str]) -> Section:
-    """The file's heading tree. Lines inside ``` fences are never headings (a `# comment` in code)."""
-    root = Section(0, "", (), 0)
-    stack, fenced = [root], False
+def _headings(lines: list[str]) -> list[tuple[int, int, str]]:
+    """(line, level, text) of each heading. `#` lines, except inside ``` fences (a `# comment` in
+    code); a file with none of those (a .txt, text copied out of a PDF) gets its title lines instead."""
+    found, fenced = [], False
     for i, line in enumerate(lines):
         if _FENCE_RE.match(line):
             fenced = not fenced
         m = None if fenced else _HEADING_RE.match(line)
-        if not m:
-            continue
-        level = len(m.group(1))
+        if m:
+            found.append((i, len(m.group(1)), m.group(2)))
+    return found or [(i, 2, line.strip()) for i, line in enumerate(lines) if _plain_title(lines, i)]
+
+
+def _plain_title(lines: list[str], i: int) -> bool:
+    """Whether line i reads as a section title where there's no `#` to say so: a short line with a
+    blank line above and text below, capitalised like a title ("Grade Policies", "How Long Students
+    Should Wait"), not ending like a sentence, and not a table row."""
+    line, text = lines[i], lines[i].strip()
+    if not 5 <= len(text) <= 70 or line[0].isspace() or text[-1] in ".,;:!?)" or "  " in text or "|" in text:
+        return False
+    if (i > 0 and lines[i - 1].strip()) or not any(below.strip() for below in lines[i + 1:i + 3]):
+        return False
+    words = _WORD_RE.findall(text)
+    return text[0].isupper() and 0 < len(words) <= 12 and all(w[0].isupper() for w in words if len(w) > 3)
+
+
+def parse(lines: list[str]) -> Section:
+    """The file's heading tree."""
+    root = Section(0, "", (), 0)
+    stack = [root]
+    for i, level, text in _headings(lines):
         while stack[-1].level >= level:
             stack.pop().end = i
         parent = stack[-1]
-        sec = Section(level, m.group(2), parent.path + ((parent.heading,) if parent.level else ()), i + 1)
+        sec = Section(level, text, parent.path + ((parent.heading,) if parent.level else ()), i + 1)
         parent.children.append(sec)
         stack.append(sec)
     for sec in stack:
