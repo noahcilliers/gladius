@@ -85,7 +85,7 @@ This creates a Python environment in `.venv`, builds `llama-server` from llama.c
 ./run.sh
 ```
 
-This starts `llama-server`, warms every adapter, and serves the UI at <http://localhost:8503>. Press `Ctrl+C` to stop the UI; the model server keeps running in the background so the next start is instant (stop it with `pkill llama-server`).
+This starts `llama-server`, warms every adapter, and serves the UI at <http://localhost:8503>. Press `Ctrl+C` to stop both the UI and the model server. To keep the server up between runs (so the next start skips loading the model), start it yourself with `./serve.sh`; `run.sh` reuses a running server and leaves it running on exit.
 
 ## Run from source
 
