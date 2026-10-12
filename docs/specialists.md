@@ -23,8 +23,8 @@ user's to choose** — and today it isn't.
 
 Two mechanics already lean the right way and we keep them:
 
-- **Adapters are swapped per-request, not reloaded.** `serve.sh` preloads every adapter with
-  `--lora-init-without-apply`; each request sends `scale: 1.0` for the chosen route and `0.0`
+- **Adapters are swapped per-request, not reloaded.** `serve.sh` preloads every adapter at
+  scale 0 (`--lora-scaled file:0,…`); each request sends `scale: 1.0` for the chosen route and `0.0`
   for the rest (`engine.lora_for`). Swapping a specialist is a request parameter, ~<50 ms.
 - **`engine.adapter_ids` re-reads the server's `/lora-adapters` every 2 s**, so the id→name
   map is already discovered at runtime rather than assumed — the registry below can change the
