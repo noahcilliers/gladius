@@ -95,7 +95,7 @@ Lives in `data/student/` (see its README). Three collections, one per folder:
 
 Chunking (`rag/workspace.py`) follows the file's structure: every heading starts a section, a section that fits in ~300 tokens keeps its subsections, a longer one is split at them, and text that is still too long is cut between paragraphs with ~50 tokens of overlap. On the sample that is **one `##` section = one chunk**.
 
-The sample's headings are written to stand alone (e.g. "CS 301 — Exam dates"); real notes' aren't ("Lecture 5"). So each chunk is embedded with its **breadcrumb** (folders, file name, headings above it) and a **context sentence** the base model writes after reading the whole file ("CS 301 Database Systems lecture notes on joins…"). Sentences cost one model call per chunk (~2 s on an M4), so `python -m rag.context` writes them once and caches them by chunk content; `GLADIUS_RAG_CONTEXT=llm|path|off` picks how much of this goes into the embedding.
+The sample's headings are written to stand alone (e.g. "CS 301 — Exam dates"); real notes' aren't ("Lecture 5"). So each chunk is embedded with its **breadcrumb** (folders, file name, headings above it) and a **context sentence** the base model writes after reading the whole file ("CS 301 Database Systems lecture notes on joins…"). Sentences cost one model call per chunk (~2 s on an M4), so they are cached by chunk content and written in the background while the app runs (or up front with `python -m rag.context`); a chunk is searched by its breadcrumb until its sentence arrives; `GLADIUS_RAG_CONTEXT=llm|path|off` picks how much of this goes into the embedding.
 
 ### Route-gated retrieval
 

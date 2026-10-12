@@ -87,10 +87,11 @@ class VectorStore:
             row.update({k: base + i for i, k in enumerate(missing)})
         out = self.vecs[[row[k] for k in keys]]
         stats = EmbedStats(len(missing), len(keys) - len(missing), len(self.keys))
-        if missing and save:
+        if missing:
             self._trim(set(keys))
-            self.save()
             stats.stored = len(self.keys)
+            if save:
+                self.save()
         return out, stats
 
     def _trim(self, used: set[str]):
