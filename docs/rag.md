@@ -147,6 +147,30 @@ model has its **own asymmetric prefix convention** (Arctic: `query` prefix vs no
 
 ### 3.4 Persistent index
 
+> **Done** (`rag/index.py`). A vector is a pure function of the text, the embedding model and how it
+> was called, so each is cached under `sha256(model id, settings, chunk.text)`, not per file.
+> `chunk.text` already holds the breadcrumb and the context sentence, so editing a paragraph, or
+> `rag.context` writing a new sentence, re-embeds exactly that chunk and nothing else; a chunker change
+> needs no version field. A launch chunks the workspace (no model), hashes every chunk, and sends
+> only the chunks whose hash isn't stored to the embedder. Deleted files' vectors are just never asked for.
+>
+> - One store per embedding model, `cache/rag/vectors-<model>.npz` (vectors, keys, meta in a single
+>   file, written to a temp file and renamed, so a Ctrl-C never leaves half of one). Shared by every
+>   workspace; capped at 50k entries, past which entries a load didn't use are dropped, oldest first.
+> - The background context writer (§3.2b) feeds the same store: each sentence's re-embedded vector is
+>   added as it arrives and the file is written every 25 sentences and when the writer stops, so a
+>   launch after the writer finished embeds nothing. Without that, every chunk's text (it now holds
+>   the sentence) would miss and the whole corpus would embed again on the next launch. The
+>   breadcrumb-only vectors it replaced stay in the store as unused entries until the size cap.
+> - Unreadable, wrong-model or wrong-size file: ignored and rebuilt. `GLADIUS_RAG_INDEX=off` embeds
+>   everything and writes nothing.
+> - Measured on the sample workspace (69 chunks, Arctic xs on CPU): cold 485 ms, warm 3 ms with 0
+>   chunks embedded; hit rate, recall, MRR and recall@5 are identical with the cache on, warm and off.
+>   `python -m rag.retriever` prints `embedded N, from cache M`.
+> - The matmul is unchanged, so the upgrade path below still applies.
+
+Original sketch, kept for the reasoning:
+
 - On index build, write chunk vectors (`.npy`) + chunk metadata (`.json`) into a cache dir
   keyed by `(embedding model id, file content hash)`.
 - On launch, load the cache; re-embed **only** files whose hash changed (added/edited/

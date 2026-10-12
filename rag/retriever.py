@@ -27,6 +27,7 @@ import numpy as np
 import requests
 
 from rag.context import ContextCache, ContextWriter, context_mode, needs_context, write_contexts
+from rag.index import EmbedStats, VectorStore, index_enabled
 from rag.workspace import PROFILE_COLLECTION, SAMPLE_WORKSPACE, Chunk, load_chunks, profile_text, workspace_dir
 from settings import ROOT
 
@@ -41,6 +42,7 @@ EVAL_PATH = ROOT / "data" / "rag_eval.json"  # written against the sample worksp
 # Calibrated on data/rag_eval.json (off-topic tops out at 0.552 / +0.09; relevant >= 0.558 / +0.08).
 RAG_THRESHOLD = 0.57
 RAG_MIN_GAP = 0.14
+INDEX_SAVE_EVERY = 25  # sentences between writes of the vector index while the context writer runs
 MAX_CONTEXT_TOKENS = 900  # profile ~210 + upcoming ~150 + 2 chunks; leaves ~750 of the 2048 context for the question + answer
 UPCOMING_DAYS = 10  # base route: calendar items due in this window are added to the profile (covers "next week")
 _CAL_LINE_RE = re.compile(r"^- \w{3} (\w{3}) (\d{1,2})\b")
@@ -145,17 +147,28 @@ class Retriever:
         # Overlapping parts of a long calendar.md share lines.
         self.calendar = list(dict.fromkeys(line for c in self.chunks if c.source.endswith("calendar.md")
                                            for line in c.body.splitlines() if _CAL_LINE_RE.match(line)))
-        self.vecs = self._encode(self.chunks)
+        # Vectors are cached on disk by their text and model (rag/index.py): only new or edited chunks embed.
+        from router import EMBED_MODEL
+
+        self.store = VectorStore(EMBED_MODEL, settings="normalize;documents:no-prefix") if index_enabled() else None
+        self.vecs, self.embed_stats = self._encode(self.chunks)
         self.collections = np.array([c.collection for c in self.chunks])
         self.searchable = tuple(str(c) for c in dict.fromkeys(self.collections) if c != PROFILE_COLLECTION)
         self._lock = threading.Lock()  # the context writer swaps rows of self.vecs while searches read it
         self._writer: threading.Thread | None = None
         self._stop = threading.Event()
 
-    def _encode(self, chunks: list[Chunk]) -> np.ndarray:
+    def _encode(self, chunks: list[Chunk], save: bool = True) -> tuple[np.ndarray, EmbedStats]:
+        """Vectors for `chunks`, from the on-disk index where their text is already in it."""
         # Arctic is asymmetric: queries get the "query" prefix (router.embed), documents get none.
         texts = [f"{c.heading}\n{c.body}" if self.context_mode == "off" else c.text for c in chunks]
-        return self.router.model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
+
+        def encode(batch: list[str]) -> np.ndarray:
+            return self.router.model.encode(batch, normalize_embeddings=True, convert_to_numpy=True)
+
+        if self.store is None:
+            return encode(texts), EmbedStats(len(texts), 0, 0)
+        return self.store.embed(texts, encode, save=save)
 
     @property
     def context_progress(self) -> tuple[int, int]:
@@ -190,11 +203,18 @@ class Retriever:
     def _write_contexts(self, todo: list[Chunk], log: Callable[[str], None]):
         index = {id(c): i for i, c in enumerate(self.chunks)}
 
+        pending = 0
+
         def embed(c: Chunk, context: str):
+            nonlocal pending
             c.context = context
-            vec = self._encode([c])[0]
+            vec = self._encode([c], save=False)[0][0]  # the index is written in batches, below
             with self._lock:
                 self.vecs[index[id(c)]] = vec
+            pending += 1
+            if self.store and pending >= INDEX_SAVE_EVERY:
+                self.store.save()
+                pending = 0
 
         try:
             writer = ContextWriter()
@@ -204,6 +224,9 @@ class Retriever:
                 + (f", {len(res['failed'])} failed" if res["failed"] else ""))
         except requests.RequestException as e:  # server stopped or restarted: the cache keeps what's done
             log(f"Context sentences: stopped, llama-server didn't answer ({type(e).__name__}). The rest are written next launch.")
+        finally:
+            if self.store and pending:  # so the next launch finds these vectors instead of embedding them again
+                self.store.save()
 
     def scope(self, collections: tuple[str, ...] | None) -> tuple[str, ...]:
         """A route's collections as this workspace has them (see RouteRAG.collections)."""
@@ -380,8 +403,9 @@ if __name__ == "__main__":
     retriever = Retriever(router)
     counts = {str(c): int((retriever.collections == c).sum()) for c in dict.fromkeys(retriever.collections)}
     print(f"Workspace {retriever.root}")
+    st = retriever.embed_stats
     print(f"Indexed {len(retriever.chunks)} chunks {counts} in {(time.perf_counter() - t0) * 1000:.0f} ms, "
-          f"index {retriever.vecs.nbytes / 1024:.0f} KB")
+          f"index {retriever.vecs.nbytes / 1024:.0f} KB; embedded {st.embedded}, from cache {st.cached}")
     for path, reason in retriever.skipped:
         print(f"  skipped {path.relative_to(retriever.root)} ({reason})")
     need = [c for c in retriever.chunks if needs_context(c)]
