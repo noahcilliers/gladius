@@ -126,23 +126,32 @@ class ContextWriter:
         so llama-server's prompt cache reads it once."""
         text = "\n".join(lines).strip()
         n = max(self.tokens(text), 1)
-        chars_per_token = len(text) / n
-        longest = max(len(c.body) for c in chunks) / chars_per_token
-        budget = self.n_ctx - PROMPT_TOKENS - ANSWER_TOKENS - int(longest)
+        # Counted, not estimated from characters: a table of dates is several times denser in tokens
+        # than prose, and a prompt that overflows the context gets no sentence, or half of one.
+        budget = self.n_ctx - PROMPT_TOKENS - ANSWER_TOKENS - max(self.tokens(c.body) for c in chunks)
         if n <= budget:
             return [text] * len(chunks)
         outline = "\n".join("  " * (s.level - 1) + s.heading for s in walk(parse(lines)) if s.level)
         if len(outline) > OUTLINE_CHARS:
             outline = outline[:OUTLINE_CHARS].rsplit("\n", 1)[0] + "\n  ..."
         outline = f"Outline:\n{outline}\n\n" if outline else ""
-        page_chars = int(budget * chars_per_token * 0.9) - len(outline)  # 0.9: chars per token varies
-        pages = _pages(lines, max(page_chars, 500))
+        budget -= self.tokens(outline) + 20  # and the "[lines a-b of n]" line
+        pages = [fitted for page in _pages(lines, max(int(budget * len(text) / n), 500))
+                 for fitted in self._fit(lines, page, budget)]
         out = []
         for c in chunks:
             start, end = next(p for p in pages if p[0] <= c.lines[0] - 1 < p[1]) if c.lines[0] else pages[0]
             page = "\n".join(lines[start:end]).strip()
             out.append(f"{outline}[lines {start + 1}-{end} of {len(lines)}]\n{page}")
         return out
+
+    def _fit(self, lines: list[str], page: tuple[int, int], budget: int) -> list[tuple[int, int]]:
+        """The page, halved until each piece is within `budget` tokens."""
+        start, end = page
+        if end - start < 2 or self.tokens("\n".join(lines[start:end])) <= budget:
+            return [page]
+        mid = (start + end) // 2
+        return self._fit(lines, (start, mid), budget) + self._fit(lines, (mid, end), budget)
 
     def write(self, c: Chunk, document: str) -> str:
         body = {
@@ -207,8 +216,11 @@ def write_contexts(root: Path, todo: list[Chunk], cache: ContextCache, writer: C
             if stop is not None and stop.is_set():
                 return {"written": done, "failed": failed, "seconds": time.perf_counter() - t0}
             try:
-                context = writer.write(c, document)
-            except requests.HTTPError as e:  # e.g. still over the context size: keep going without it
+                try:
+                    context = writer.write(c, document)
+                except requests.HTTPError:  # over the context size after all: place it by its path alone
+                    context = writer.write(c, "")
+            except requests.HTTPError as e:
                 failed.append((c.tag, str(e)))
                 continue
             cache.put(c, context, writer.model)

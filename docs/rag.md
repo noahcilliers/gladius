@@ -77,6 +77,8 @@ Introduce a **workspace**: a directory of the student's notes that Gladius index
 > Text that is still too long is cut at paragraphs, then lines, then sentences, with
 > `OVERLAP_CHARS` repeated. Code fences are never split on `#` comments; front matter is dropped;
 > text before the first heading is kept. Each chunk carries its heading path, line span and part.
+> A file with no `#` headings (a `.txt`, text converted from a PDF) gets its title-like lines as
+> headings instead: short, a blank line above, capitalised, not ending like a sentence.
 > Plus context sentences, §3.2b.
 
 Keep the good instinct (`##` section = chunk) but make it robust:
@@ -104,7 +106,8 @@ Keep the good instinct (`##` section = chunk) but make it robust:
   `python -m rag.context` writes every sentence up front.
 - The model reads the whole file when it fits in llama-server's context (`-c 2048` fits every
   sample file); a longer file is shown a page at a time with its outline. Chunks on one page
-  share a prompt prefix, so llama-server reads the page once.
+  share a prompt prefix, so llama-server reads the page once. Pages are sized by counted tokens,
+  not characters: a table of dates is several times denser than prose.
 - `GLADIUS_RAG_CONTEXT=llm|path|off` picks what's embedded; `off` reproduces the old index exactly.
 
 Measured on `data/rag_eval.json`, with the sample's headings replaced by short topics ("Late
