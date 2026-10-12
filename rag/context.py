@@ -6,8 +6,10 @@ tells you: the course, the kind of document, the topic, the people and dates. Th
 the file and writes a sentence or two for each of its chunks (Anthropic's "contextual retrieval").
 
 That's one model call per chunk, ~1-2 s each on an M4, so sentences are cached by chunk content in
-cache/rag/contexts.json and only new or edited chunks go to the model. The retriever only reads the
-cache: a chunk with no sentence yet is embedded with its breadcrumb alone.
+cache/rag/contexts.json and only new or edited chunks go to the model. A chunk with no sentence yet
+is embedded with its breadcrumb alone, so nothing waits on them: the app writes the missing ones in
+the background while it's in use (Retriever.start_context_writer) and each chunk is re-embedded as
+its sentence arrives. To write them up front instead, e.g. before an eval:
 
     python -m rag.context            # sentences for the workspace's new and edited chunks
     python -m rag.context --redo     # rewrite them all (e.g. to try another model)
@@ -22,6 +24,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -187,9 +190,12 @@ def clean(text: str) -> str:
 
 
 def write_contexts(root: Path, todo: list[Chunk], cache: ContextCache, writer: ContextWriter,
-                   log: Callable[[str], None] = print, show: bool = False) -> dict:
+                   log: Callable[[str], None] = print, show: bool = False,
+                   on_written: Callable[[Chunk, str], None] | None = None,
+                   stop: threading.Event | None = None) -> dict:
     """Write and cache a sentence for each chunk in `todo`, a file at a time. The cache is saved after
-    every chunk, so stopping loses nothing."""
+    every chunk, so stopping loses nothing. `on_written` gets each chunk and its sentence once it's
+    cached; setting `stop` ends the run before the next chunk."""
     by_file: dict[str, list[Chunk]] = {}
     for c in todo:
         by_file.setdefault(c.source, []).append(c)
@@ -198,6 +204,8 @@ def write_contexts(root: Path, todo: list[Chunk], cache: ContextCache, writer: C
         t_file = time.perf_counter()
         documents = writer.documents(read_lines(root / source), cs)
         for c, document in zip(cs, documents):
+            if stop is not None and stop.is_set():
+                return {"written": done, "failed": failed, "seconds": time.perf_counter() - t0}
             try:
                 context = writer.write(c, document)
             except requests.HTTPError as e:  # e.g. still over the context size: keep going without it
@@ -206,6 +214,8 @@ def write_contexts(root: Path, todo: list[Chunk], cache: ContextCache, writer: C
             cache.put(c, context, writer.model)
             cache.save()
             done += 1
+            if on_written:
+                on_written(c, context)
             if show:
                 log(f"    {c.tag}\n      → {context}")
         elapsed = time.perf_counter() - t0
